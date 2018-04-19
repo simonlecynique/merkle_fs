@@ -86,9 +86,9 @@ bbfs.o: bbfs.c config.h params.h \
   /usr/include/sys/resource.h /usr/include/sys/_types/_wchar_t.h \
   /usr/include/string.h /usr/include/secure/_string.h \
   /usr/include/unistd.h /usr/include/sys/unistd.h \
-  /usr/include/sys/_types/_posix_vdisable.h ../../merkletree.h \
-  ../../sha3.h /usr/include/assert.h /usr/include/math.h ../../parse.h \
-  ../../merklelog.h /usr/include/sys/xattr.h log.h
+  /usr/include/sys/_types/_posix_vdisable.h ../../parse.h \
+  ../../merkletree.h ../../sha3.h /usr/include/assert.h \
+  /usr/include/math.h ../../merklelog.h /usr/include/sys/xattr.h log.h
 
 config.h:
 
@@ -388,6 +388,8 @@ params.h:
 
 /usr/include/sys/_types/_posix_vdisable.h:
 
+../../parse.h:
+
 ../../merkletree.h:
 
 ../../sha3.h:
@@ -395,8 +397,6 @@ params.h:
 /usr/include/assert.h:
 
 /usr/include/math.h:
-
-../../parse.h:
 
 ../../merklelog.h:
 

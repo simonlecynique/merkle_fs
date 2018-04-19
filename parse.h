@@ -15,4 +15,4 @@ typedef struct {
 int compute_tree_size(int index);
 
 //Parses a file to a char**, and computes the merkle_tree
-void parse_file(const char * filename, merkle_tree *mt);
+void parse_file(FILE **fp, merkle_tree *mt, char **result);

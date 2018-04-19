@@ -345,8 +345,18 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
 	    );
     // no need to get fpath on this one, since I work from fi->fh not the path
     log_fi(fi);
+    char fpath[PATH_MAX];
+    bb_fullpath(fpath, path);
+    int k = log_syscall("pwrite", pwrite(fi->fh, buf, size, offset), 0);
+    FILE *fp = fopen(fpath, "r");
+    merkle_tree mt;
+    char *result = malloc(32 * 8 * mt.nb_nodes);
+    parse_file(&fp, &mt, &result);
+    fclose(fp);
+    //log_msg("%s", result);
+    bb_setxattr(path, "merkle", result, strlen(result), 0, 0);
 
-    return log_syscall("pwrite", pwrite(fi->fh, buf, size, offset), 0);
+    return k;
 }
 
 /** Get file system statistics
@@ -715,18 +725,7 @@ int bb_access(const char *path, int mask)
     char fpath[PATH_MAX];
     log_msg("\nbb_access(path=\"%s\", mask=0%o)\n",
 	    path, mask);
-
     bb_fullpath(fpath, path);
-
-    FILE *bidule = fopen(fpath, "r+");
-    if (bidule) {
-      merkle_tree mt;
-      parse_file(fpath, &mt);
-      char* result = (char*)malloc(sizeof(char) * 32 * 8 * mt.nb_nodes);
-      tree_to_string(&mt, result);
-      merkle_log(result,fpath);
-    }
-
     retstat = access(fpath, mask);
 
     if (retstat < 0)

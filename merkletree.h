@@ -3,6 +3,7 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
+#include "merklelog.h"
 
 #define HASH_SIZE 256
 

@@ -1,7 +1,7 @@
 #include "parse.h"
 
-void parse_file(const char * filename, merkle_tree *mt) {
-    FILE *fp;
+void parse_file(FILE **fp, merkle_tree *mt, char **result) {
+    //FILE *fp;
     char *line = NULL;
     size_t len = 0;
     ssize_t read;
@@ -10,18 +10,14 @@ void parse_file(const char * filename, merkle_tree *mt) {
 
     int index = 0;
 
-    fp = fopen(filename, "r");
-
-    if (fp == NULL)
+    if (*fp == NULL)
         exit(EXIT_FAILURE);
 
-    while ((read = getline(&line, &len, fp)) != -1) {
+    while ((read = getline(&line, &len, *fp)) != -1) {
                 lines[index] = line;
-                //printf("%s", lines[index] );
                 index++;
     }
 
-    fclose(fp);
     if (line)
         free(line);
 
@@ -37,7 +33,11 @@ void parse_file(const char * filename, merkle_tree *mt) {
     mt->data_blocks = tree_size;
 
     build_tree(mt, lines);
-    
+    char tree_string[32 * 8 * mt->nb_nodes];
+    tree_to_string(mt, tree_string);
+    *result = tree_string;
+
+
 }
 
 int compute_tree_size(int index) {
