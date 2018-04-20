@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-rm mkl sha parse test tree.log
+rm mkl sha parse test

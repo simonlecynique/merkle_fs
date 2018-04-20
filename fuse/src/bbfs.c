@@ -18,8 +18,6 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include "../../parse.h"
-#include "../../merklelog.h"
-
 
 #ifdef HAVE_SYS_XATTR_H
 #include <sys/xattr.h>
@@ -350,10 +348,9 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     int k = log_syscall("pwrite", pwrite(fi->fh, buf, size, offset), 0);
     FILE *fp = fopen(fpath, "r");
     merkle_tree mt;
-    char *result = malloc(32 * 8 * mt.nb_nodes);
+    char *result;
     parse_file(&fp, &mt, &result);
     fclose(fp);
-    //log_msg("%s", result);
     bb_setxattr(path, "merkle", result, strlen(result), 0, 0);
 
     return k;

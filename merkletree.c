@@ -5,7 +5,10 @@ int build_tree(merkle_tree *mt, char **data_table) {
     mt->nb_nodes = (1 << (mt->tree_height));
     mt->nodes = (node *)malloc(sizeof(node) * (mt->nb_nodes + 1));
     for (int i = leaf_start_index; i< mt->nb_nodes; i++) {
-        mt->nodes[i].data = data_table[i-leaf_start_index];
+        //printf("%s\n", "hello" );
+        //mt->nodes[i].data = data_table[i-leaf_start_index];
+        mt->nodes[i].data = *data_table;
+        data_table = data_table + strlen(*data_table);
         mt->nodes[i].hash = NULL;
         hash_node(mt, i);
     }
@@ -23,27 +26,28 @@ int hash_node(merkle_tree *mt, int i) {
 
     sha3_context c;
     uint8_t *hash;
-    char string[4];
-    char hash_string[4*32];
+    char string[HEX];
+    char hash_string[HEX * HASH_SIZE / BYTE_SIZE];
     hash_string[0] = '\0';
 
     //The node considered is not a leaf.
     if (i < (1 << (mt->tree_height-1))) {
         if (mt->nodes[2*i].hash && mt->nodes[2*i+1].hash) {
-            char *buffer = (char *)malloc(sizeof(char *) * HASH_SIZE / 4);
-            memcpy(buffer, mt->nodes[2*i].hash, HASH_SIZE / 8);
-            memcpy(buffer + (HASH_SIZE / 8), mt->nodes[2*i+1].hash, HASH_SIZE / 8);
+            char *buffer = (char *)malloc(sizeof(char *) * 2 * HASH_SIZE / BYTE_SIZE);
+            memcpy(buffer, mt->nodes[2*i].hash, HASH_SIZE / BYTE_SIZE);
+            memcpy(buffer + (HASH_SIZE / 8), mt->nodes[2*i+1].hash, HASH_SIZE / BYTE_SIZE);
 
             //We hash the concatenation of the two related nodes.
-            mt->nodes[i].hash = (char *)malloc(sizeof(char *) * HASH_SIZE / 8);
+            mt->nodes[i].hash = (char *)malloc(sizeof(char *) * HASH_SIZE / BYTE_SIZE);
             sha3_Init256(&c);
             sha3_Update(&c, buffer, strlen(buffer));
             hash = (uint8_t *) sha3_Finalize(&c);
-            for (int j=0 ; j < 32 ; j++) {
+            for (int j=0 ; j < (HASH_SIZE / BYTE_SIZE) ; j++) {
                 sprintf(string, "%x", hash[j]);
                 strcat(hash_string, string);
             }
             strcpy(mt->nodes[i].hash, hash_string);
+            free(buffer);
         }
     }
     //endif
@@ -51,11 +55,11 @@ int hash_node(merkle_tree *mt, int i) {
     //Else, the node is a leaf.
     else {
         if (mt->nodes[i].data) {
-            mt->nodes[i].hash = (char *)malloc(sizeof(char *) * HASH_SIZE / 4);
+            mt->nodes[i].hash = (char *)malloc(sizeof(char *) * 2 * HASH_SIZE / BYTE_SIZE);
             sha3_Init256(&c);
             sha3_Update(&c, mt->nodes[i].data, strlen(mt->nodes[i].data));
             hash = (uint8_t *)sha3_Finalize(&c);
-            for (int j=0 ; j < 32 ; j++) {
+            for (int j=0 ; j < (HASH_SIZE / BYTE_SIZE) ; j++) {
                 sprintf(string, "%x", hash[j]);
                 strcat(hash_string, string);
             }
@@ -109,7 +113,7 @@ void compare_trees(merkle_tree *mt_a, merkle_tree *mt_b, int index) {
 //Format : "1:hash,2:hash"
 void tree_to_string(merkle_tree *mt, char tree[]) {
 
-    char tree_string[32 * 4 * mt->nb_nodes];
+    char *tree_string = (char *) malloc(HEX * (HASH_SIZE / BYTE_SIZE) * mt->nb_nodes);
     char *hash;
     char number_string[10];
     tree_string[0] = '\0';
@@ -124,6 +128,7 @@ void tree_to_string(merkle_tree *mt, char tree[]) {
             strcat(tree_string, ",");
     }
     strcpy(tree, tree_string);
+    free(tree_string);
 
 }
 
@@ -171,8 +176,8 @@ char** str_split(char* a_str, const char a_delim) {
 
 void string_to_tree(merkle_tree *mt, char *tree_string) {
 
-    char* *tokens;
-    char* *thing;
+    char **tokens;
+    char **thing;
     tokens = str_split(tree_string, ',');
 
     if (tokens)
@@ -184,7 +189,7 @@ void string_to_tree(merkle_tree *mt, char *tree_string) {
 
         for (int i = 0; *(tokens + i); i++)
         {
-            mt->nodes[i + 1].hash = (char *) malloc(sizeof(char)*HASH_SIZE/4);
+            mt->nodes[i + 1].hash = (char *) malloc(sizeof(char)* 2 * HASH_SIZE / BYTE_SIZE);
             thing = str_split(*(tokens + i), ':');
             char *hash_string = *(thing + 1);
             strcpy(mt->nodes[i + 1].hash, hash_string);
@@ -209,43 +214,3 @@ void freeMerkleTree(merkle_tree *mt) {
     }
     return;
 }
-
-// #define TREE_HEIGHT 4
-// #define BLOCKS 8
-// int main(int argc, char const *argv[]) {
-//
-//     //---------CREATING MERKLE TREE A
-//     merkle_tree mt_a = {0, TREE_HEIGHT, BLOCKS, NULL};
-//     char *data_table[BLOCKS];
-//     for (int i = 0 ; i < BLOCKS ; i++ ) {
-//       data_table[i] = "hello";
-//     }
-//     build_tree(&mt_a, data_table);
-//     //printf("%s\n", mt_a.nodes[1].hash );
-//     //print_tree(&mt_a);
-//
-//     //---------CREATING MERKLE TREE B
-//     //merkle_tree mt_b = {0, TREE_HEIGHT, BLOCKS, NULL};
-//     //char *data_tab[BLOCKS];
-//     //for (int i = 0 ; i < BLOCKS-1 ; i++ ) {
-//     //  data_tab[i] = "hello";
-//     //}
-//     //data_tab[BLOCKS-1] = "hellow";
-//     //build_tree(&mt_b, data_tab);
-//     //print_tree(&mt_b);
-//
-//     //---------COMPARES A AND B
-//     //compare_trees(&mt_a, &mt_b, 1);
-//
-//     //---------TRANSFORMS A TO STRING
-//     char resu[32 * 4 * mt_a.nb_nodes];
-//     tree_to_string(&mt_a, resu);
-//     printf("%s\n", resu );
-//     merkle_tree mt_c;
-//     string_to_tree(&mt_c, resu);
-//     compare_trees(&mt_a, &mt_c, 1);
-//     char resu2[32 * 4 * mt_a.nb_nodes];
-//     tree_to_string(&mt_c, resu2);
-//     printf("%s\n", resu2 );
-//     return 0;
-// }

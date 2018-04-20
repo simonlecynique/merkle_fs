@@ -3,7 +3,7 @@
 #include <string.h>
 #include "merkletree.h"
 
-#define MAXLINES 100000
+#define MAXLINES 400000
 
 typedef struct {
     char* *lines;
