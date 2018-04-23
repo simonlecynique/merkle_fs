@@ -10,8 +10,8 @@
 
 //Node of Merkle Tree definition
 typedef struct {
-    char *hash;
     char *data;
+    char *hash;
 } node;
 
 //Merkle Tree definition

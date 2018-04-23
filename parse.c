@@ -6,7 +6,6 @@ void parse_file(FILE **fp, merkle_tree *mt, char **result) {
     size_t len = 0;
     ssize_t read;
     char **lines = malloc(MAXLINES * 1000);
-    //char *lines[MAXLINES];
     int index = 0;
     int total_size = 0;
 
@@ -15,16 +14,9 @@ void parse_file(FILE **fp, merkle_tree *mt, char **result) {
         exit(EXIT_FAILURE);
 
     while ((read = getline(lines, &len, *fp)) != -1) {
-                //printf("%s\n", *lines);
                 lines = lines + read;
-                // lines[index] = (char *) malloc(read);
-                // lines[index][0] = '\0';
-                // //lines[index] = line;
-                // strcat(lines[index], line);
-                // //strcpy(lines[index],line);
                 index++;
                 total_size += read;
-                // printf("%s\n", lines[index]);
     }
 
     if (line)
@@ -39,6 +31,8 @@ void parse_file(FILE **fp, merkle_tree *mt, char **result) {
 
     lines -= total_size;
     int height = (int) log2(tree_size) + 1;
+
+    //Assigning values for merkle_tree calculation
     mt->tree_height = height;
     mt->nb_nodes = 0;
     mt->data_blocks = tree_size;
@@ -47,7 +41,6 @@ void parse_file(FILE **fp, merkle_tree *mt, char **result) {
     free(lines);
     *result = (char *) malloc(HASH_SIZE * mt->nb_nodes);
     tree_to_string(mt, *result);
-
 
 }
 
