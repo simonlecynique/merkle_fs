@@ -5,8 +5,6 @@ int build_tree(merkle_tree *mt, char **data_table) {
     mt->nb_nodes = (1 << (mt->tree_height));
     mt->nodes = (node *)malloc(sizeof(node) * (mt->nb_nodes + 1));
     for (int i = leaf_start_index; i< mt->nb_nodes; i++) {
-        //printf("%s\n", "hello" );
-        //mt->nodes[i].data = data_table[i-leaf_start_index];
         mt->nodes[i].data = *data_table;
         data_table = data_table + strlen(*data_table);
         mt->nodes[i].hash = NULL;
@@ -92,6 +90,36 @@ int set_tree_data(merkle_tree *mt, int i, char *data) {
         hash_node(mt, j);
         j = j / 2;
     }
+    return 0;
+}
+
+int change_tree_data(merkle_tree *mt, int indexes[], char **datas, int number) {
+    int index;
+    int data_size = 0;
+    for (int i = 0; i < number; i ++) {
+        index = indexes[i];
+        mt->nodes[index].data = *datas;
+        //indexes += sizeof(int);
+        data_size += strlen(*datas);
+        datas += strlen(*datas);
+    }
+
+    datas -= data_size;
+    //indexes -= number * sizeof(int);
+
+    int j = index;
+    int k = 1;
+
+    while (j) {
+      for (int i = 0; i < number; i ++) {
+          index = indexes[i] / k ;
+          //indexes += sizeof(int);
+          hash_node(mt, index);
+      }
+        k *= 2;
+        j = j / 2;
+    }
+
     return 0;
 }
 
