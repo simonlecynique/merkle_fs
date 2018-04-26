@@ -115,7 +115,7 @@ void set_tree_datas(merkle_tree *mt, char **data_table) {
 
 }
 
-int compute_data_hashes(merkle_tree *mt, char **data_table, int nb_of_threads) {
+int m_build_tree(merkle_tree *mt, char **data_table, int nb_of_threads) {
 
     int leaf_start_index = (1 << (mt->tree_height - 1));
     set_tree_datas(mt, data_table);
@@ -131,7 +131,7 @@ int compute_data_hashes(merkle_tree *mt, char **data_table, int nb_of_threads) {
         t_arg[i].start_index = start_index;
         t_arg[i].nb_leaves   = nb_leaves_per_thread;
 
-        if (pthread_create(&threads[i], NULL, &threaded_hashes, (void *)&t_arg[i]) != 0)
+        if (pthread_create(&threads[i], NULL, &m_hash_nodes, (void *)&t_arg[i]) != 0)
             return -1;
 
     }
@@ -142,7 +142,7 @@ int compute_data_hashes(merkle_tree *mt, char **data_table, int nb_of_threads) {
     t_arg[nb_of_threads - 1].start_index = start_index;
     t_arg[nb_of_threads - 1].nb_leaves   = nb_leaves_per_thread + (leaf_start_index % nb_of_threads);
 
-    if (pthread_create(&threads[nb_of_threads - 1], NULL, &threaded_hashes, (void *)&t_arg[nb_of_threads - 1]) != 0)
+    if (pthread_create(&threads[nb_of_threads - 1], NULL, &m_hash_nodes, (void *)&t_arg[nb_of_threads - 1]) != 0)
         return -1;
 
     //Waits for every thread to be done
@@ -161,7 +161,7 @@ int compute_data_hashes(merkle_tree *mt, char **data_table, int nb_of_threads) {
     return 0;
 }
 
-void *threaded_hashes(void *arg) {
+void *m_hash_nodes(void *arg) {
 
     //Getting arguments through struct
     threaded_arg *t_arg = (threaded_arg *)arg;
@@ -291,7 +291,7 @@ void string_to_tree(merkle_tree *mt, char *tree_string) {
 
 // COMPARISONS AND DATA CHANGES-------------------------------------------------
 
-int change_tree_data(merkle_tree *mt, int indexes[], char **datas, int number) {
+int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number) {
     int index;
     int data_size = 0;
     for (int i = 0; i < number; i ++) {

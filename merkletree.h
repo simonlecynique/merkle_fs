@@ -38,15 +38,15 @@ int hash_node(merkle_tree *mt, int i);
 
 void set_tree_datas(merkle_tree *mt, char **data_table);
 
-int compute_data_hashes(merkle_tree *mt, char **data_table, int nb_of_threads);
+int m_build_tree(merkle_tree *mt, char **data_table, int nb_of_threads);
 
-void *threaded_hashes(void *arg);
+void *m_hash_nodes(void *arg);
 
 void print_tree(merkle_tree *mt);
 
 //Changes tree data of indexes in the argument array. The data to be inserted
 //are in the datas argument. The number of data to change is number.
-int change_tree_data(merkle_tree *mt, int indexes[], char **datas, int number);
+int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number);
 
 //Compares two trees : when different node is found,
 //searches until finding all different leaves.

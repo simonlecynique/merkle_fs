@@ -127,7 +127,7 @@ int compute_multi_threaded_merkle(FILE **fp, merkle_tree *mt, char **result) {
     mt->nb_nodes    = 0;
     mt->data_blocks = tree_size;
 
-    compute_data_hashes(mt, parsed_file, 8);
+    m_build_tree(mt, parsed_file, 8);
 
     free(file_string);
     free(parsed_file);
@@ -137,4 +137,19 @@ int compute_multi_threaded_merkle(FILE **fp, merkle_tree *mt, char **result) {
     tree_to_string(mt, *result);
 
     return 0;
+}
+
+int pages_in_need(int size, int offset) {
+
+    int first_page = (int) offset / PAGE_LENGTH;
+    int last_page  = (int) (offset + size) / PAGE_LENGTH;
+
+    int number = last_page - first_page + 1;
+
+    int indexes[number];
+    for (int i = 0 ; i < number ; i ++) {
+          indexes[i] = first_page + i;
+    }
+
+    //Now read the file and get what you need
 }

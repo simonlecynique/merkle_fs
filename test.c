@@ -64,7 +64,7 @@ int test_merkle_tree(void) {
     int indexes[number];
     indexes[0] = 11;
     indexes[1] = 14;
-    change_tree_data(&mt_b, indexes, changes, number);
+    change_and_rebuild(&mt_b, indexes, changes, number);
     printf("%s\n", "Printing changed Merkle Tree B :" );
     print_tree(&mt_b);
 
