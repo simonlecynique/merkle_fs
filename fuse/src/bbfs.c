@@ -343,15 +343,15 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
 	    );
     // no need to get fpath on this one, since I work from fi->fh not the path
     log_fi(fi);
-    char fpath[PATH_MAX];
-    bb_fullpath(fpath, path);
+    // char fpath[PATH_MAX];
+    // bb_fullpath(fpath, path);
     int k = log_syscall("pwrite", pwrite(fi->fh, buf, size, offset), 0);
-    FILE *fp = fopen(fpath, "r");
-    merkle_tree mt;
-    char *result;
-    parse_file(&fp, &mt, &result);
-    fclose(fp);
-    bb_setxattr(path, "merkle", result, strlen(result), 0, 0);
+    // FILE *fp = fopen(fpath, "r");
+    // merkle_tree mt;
+    // char *result;
+    // parse_file(&fp, &mt, &result);
+    // fclose(fp);
+    // bb_setxattr(path, "merkle", result, strlen(result), 0, 0);
 
     return k;
 }

@@ -1,18 +1,26 @@
 #include "merkletree.h"
 
 int build_tree(merkle_tree *mt, char **data_table) {
+
+    //Setting values of Merkle Tree
     int leaf_start_index = (1 << (mt->tree_height - 1));
     mt->nb_nodes = (1 << (mt->tree_height));
-    mt->nodes = (node *)malloc(sizeof(node) * (mt->nb_nodes + 1));
+    mt->nodes    = (node *) malloc(sizeof(node) * (mt->nb_nodes + 1));
+
+    //Hashing leaves
     for (int i = leaf_start_index; i< mt->nb_nodes; i++) {
         mt->nodes[i].data = *data_table;
-        data_table = data_table + strlen(*data_table);
+        data_table        = data_table + strlen(*data_table);
         mt->nodes[i].hash = NULL;
-        hash_node(mt, i);
+        if (hash_node(mt, i) == -1)
+            return -1;
     }
+
+    //Hashing others
     for (int i = leaf_start_index - 1; i>0; i--) {
         mt->nodes[i].hash = NULL;
-        hash_node(mt, i);
+        if (hash_node(mt, i) == -1)
+            return -1;
     }
     return 0;
 }
@@ -22,6 +30,7 @@ int hash_node(merkle_tree *mt, int i) {
     if (i > mt->nb_nodes - 1 )
         return -1;
 
+    //Creating variables
     sha3_context c;
     uint8_t *hash;
     char string[HEX];
@@ -30,6 +39,7 @@ int hash_node(merkle_tree *mt, int i) {
 
     //The node considered is not a leaf.
     if (i < (1 << (mt->tree_height-1))) {
+        //The two children leaves have a hash computed
         if (mt->nodes[2*i].hash && mt->nodes[2*i+1].hash) {
             char *buffer = (char *)malloc(sizeof(char *) * 2 * HASH_SIZE / BYTE_SIZE);
             memcpy(buffer, mt->nodes[2*i].hash, HASH_SIZE / BYTE_SIZE);
@@ -47,11 +57,17 @@ int hash_node(merkle_tree *mt, int i) {
             strcpy(mt->nodes[i].hash, hash_string);
             free(buffer);
         }
+
+        //If they don't, return an error
+        else {
+            return -1;
+        }
+
     }
-    //endif
 
     //Else, the node is a leaf.
     else {
+        //Checks if the leaf has data to hash
         if (mt->nodes[i].data) {
             mt->nodes[i].hash = (char *)malloc(sizeof(char *) * 2 * HASH_SIZE / BYTE_SIZE);
             sha3_Init256(&c);
@@ -62,6 +78,10 @@ int hash_node(merkle_tree *mt, int i) {
                 strcat(hash_string, string);
             }
             strcpy(mt->nodes[i].hash, hash_string);
+        }
+        //If it does not, return an error
+        else {
+            return -1;
         }
     }
     return 0;
@@ -82,42 +102,28 @@ void print_tree(merkle_tree *mt) {
     }
 }
 
-int set_tree_data(merkle_tree *mt, int i, char *data) {
-    mt->nodes[i].data = data;
-    int j = i;
-    //Recomputes all the changed nodes after change.
-    while (j) {
-        hash_node(mt, j);
-        j = j / 2;
-    }
-    return 0;
-}
-
 int change_tree_data(merkle_tree *mt, int indexes[], char **datas, int number) {
     int index;
     int data_size = 0;
     for (int i = 0; i < number; i ++) {
-        index = indexes[i];
+        index                 = indexes[i];
         mt->nodes[index].data = *datas;
-        //indexes += sizeof(int);
-        data_size += strlen(*datas);
-        datas += strlen(*datas);
+        data_size            += strlen(*datas);
+        datas                += strlen(*datas);
     }
 
     datas -= data_size;
-    //indexes -= number * sizeof(int);
-
-    int j = index;
-    int k = 1;
+    int j  = index;
+    int k  = 1;
 
     while (j) {
       for (int i = 0; i < number; i ++) {
           index = indexes[i] / k ;
-          //indexes += sizeof(int);
-          hash_node(mt, index);
+          if (hash_node(mt, index) == -1)
+              return -1;
       }
         k *= 2;
-        j = j / 2;
+        j  = j / 2;
     }
 
     return 0;

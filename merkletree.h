@@ -30,8 +30,9 @@ int hash_node(merkle_tree *mt, int i);
 
 void print_tree(merkle_tree *mt);
 
-//Sets data of node i to data.
-int set_tree_data(merkle_tree *mt, int i, char *data);
+//Changes tree data of indexes in the argument array. The data to be inserted
+//are in the datas argument. The number of data to change is number.
+int change_tree_data(merkle_tree *mt, int indexes[], char **datas, int number);
 
 //Compares two trees : when different node is found,
 //searches until finding all different leaves.

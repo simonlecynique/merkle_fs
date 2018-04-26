@@ -2,15 +2,15 @@
 
 //Tests the function of parse.c. Prints the Merkle Tree of parse.h file.
 
-int parse_test(void) {
+int compute_merkle_test(void) {
 
-    merkle_tree mt_a;
-    FILE *fp = fopen("parse.h", "r");
-    char* result;
+  FILE *fp = fopen("text_file.txt", "r");
+  merkle_tree mt_a;
+  char* result;
 
-    parse_file(&fp, &mt_a, &result);
-    printf("%s\n", result );
-    return 0;
+  compute_merkle(&fp, &mt_a, &result);
+  printf("%s\n", result );
+  return 0;
 }
 
 //Tests Merkle Trees by computing two different ones and comparing them.
@@ -22,16 +22,16 @@ int parse_test(void) {
 int test_merkle_tree(void) {
 
     //---------CREATING MERKLE TREE A
-    // merkle_tree mt_a = {0, TREE_HEIGHT, BLOCKS, NULL};
-    // char **data_table = (char **) malloc(sizeof(char *) * BLOCKS * strlen("hello"));
-    // for (int i = 0 ; i < BLOCKS ; i++ ) {
-    //   *data_table = "hello";
-    //   data_table += strlen("hello");
-    // }
-    // data_table -= BLOCKS * strlen("hello");
-    // build_tree(&mt_a, data_table);
-    // printf("%s\n", "Printing Merkle Tree A :" );
-    // print_tree(&mt_a);
+    merkle_tree mt_a = {0, TREE_HEIGHT, BLOCKS, NULL};
+    char **data_table = (char **) malloc(sizeof(char *) * BLOCKS * strlen("hello"));
+    for (int i = 0 ; i < BLOCKS ; i++ ) {
+      *data_table = "hello";
+      data_table += strlen("hello");
+    }
+    data_table -= BLOCKS * strlen("hello");
+    build_tree(&mt_a, data_table);
+    printf("%s\n", "Printing Merkle Tree A :" );
+    print_tree(&mt_a);
 
     //---------CREATING MERKLE TREE B
     merkle_tree mt_b = {0, TREE_HEIGHT, BLOCKS, NULL};
@@ -60,19 +60,15 @@ int test_merkle_tree(void) {
 
 
     //---------COMPARES A AND B
-    //compare_trees(&mt_a, &mt_b, 1);
+    compare_trees(&mt_a, &mt_b, 1);
 
     return 0;
 }
 
 int main(void) {
-    FILE *fp = fopen("parse.h", "r");
-    //parse_test();
-    test_merkle_tree();
-    merkle_tree mt_a;
-    char* result;
-    compute_merkle(&fp, &mt_a, &result);
 
+    test_merkle_tree();
+    compute_merkle_test();
 
     return 0;
 }

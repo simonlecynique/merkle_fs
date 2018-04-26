@@ -1,51 +1,11 @@
 #include "parse.h"
 
-void parse_file(FILE **fp, merkle_tree *mt, char **result) {
-
-    char *line = NULL;
-    size_t len = 0;
-    ssize_t read;
-    char **lines = malloc(MAXLINES * 1000);
-    int index = 0;
-    int total_size = 0;
-
-    //File does not exist
-    if (*fp == NULL)
-        exit(EXIT_FAILURE);
-
-    while ((read = getline(lines, &len, *fp)) != -1) {
-                lines = lines + read;
-                index++;
-                total_size += read;
-    }
-
-    if (line)
-        free(line);
-
-    int tree_size = compute_tree_size(index);
-    for (int i = index; i < tree_size ; i++){
-      *lines = " ";
-      lines++;
-      total_size++;
-    }
-
-    lines -= total_size;
-    int height = (int) log2(tree_size) + 1;
-
-    //Assigning values for merkle_tree calculation
-    mt->tree_height = height;
-    mt->nb_nodes = 0;
-    mt->data_blocks = tree_size;
-
-    build_tree(mt, lines);
-    free(lines);
-    *result = (char *) malloc(HASH_SIZE * mt->nb_nodes);
-    tree_to_string(mt, *result);
-
-}
-
 int compute_tree_size(int index) {
     unsigned int v = index;
+
+    if (v == 0)
+        return 1;
+
     v--;
     v |= v >> 1;
     v |= v >> 2;
@@ -56,11 +16,11 @@ int compute_tree_size(int index) {
     return v;
 }
 
-void compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
+int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
 
     //File does not exist
     if (*fp == NULL)
-        exit(EXIT_FAILURE);
+        return -1;
 
     //Compute file size, and goes back to the beginning of the file
     fseek(*fp, 0L, SEEK_END);
@@ -102,14 +62,18 @@ void compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
 
     //Assigning values for merkle_tree calculation
     mt->tree_height = height;
-    mt->nb_nodes = 0;
+    mt->nb_nodes    = 0;
     mt->data_blocks = tree_size;
 
-    build_tree(mt, parsed_file);
+     if (build_tree(mt, parsed_file) == -1)
+        return -1;
+
     free(file_string);
+    free(parsed_file);
 
     //Stores result in a string
     *result = (char *) malloc(HASH_SIZE * mt->nb_nodes);
     tree_to_string(mt, *result);
 
+    return 0;
 }
