@@ -1,5 +1,7 @@
 #include "merkletree.h"
 
+//SINGLE THREADED---------------------------------------------------------------
+
 int build_tree(merkle_tree *mt, char **data_table) {
 
     //Setting values of Merkle Tree
@@ -8,7 +10,7 @@ int build_tree(merkle_tree *mt, char **data_table) {
     mt->nodes    = (node *) malloc(sizeof(node) * (mt->nb_nodes + 1));
 
     //Hashing leaves
-    for (int i = leaf_start_index; i< mt->nb_nodes; i++) {
+    for (int i = leaf_start_index; i < mt->nb_nodes; i++) {
         mt->nodes[i].data = *data_table;
         data_table        = data_table + strlen(*data_table);
         mt->nodes[i].hash = NULL;
@@ -17,7 +19,7 @@ int build_tree(merkle_tree *mt, char **data_table) {
     }
 
     //Hashing others
-    for (int i = leaf_start_index - 1; i>0; i--) {
+    for (int i = leaf_start_index - 1; i > 0; i--) {
         mt->nodes[i].hash = NULL;
         if (hash_node(mt, i) == -1)
             return -1;
@@ -26,6 +28,7 @@ int build_tree(merkle_tree *mt, char **data_table) {
 }
 
 int hash_node(merkle_tree *mt, int i) {
+
     //If the index is out of the range, return.
     if (i > mt->nb_nodes - 1 )
         return -1;
@@ -87,6 +90,97 @@ int hash_node(merkle_tree *mt, int i) {
     return 0;
 }
 
+//------------------------------------------------------------------------------
+
+//MULTI THREADED----------------------------------------------------------------
+
+void set_tree_datas(merkle_tree *mt, char **data_table) {
+
+    int total_size = 0;
+    //Setting values of Merkle Tree
+    int leaf_start_index = (1 << (mt->tree_height - 1));
+    mt->nb_nodes         = (1 << (mt->tree_height));
+    mt->nodes            = (node *) malloc(sizeof(node) * (mt->nb_nodes + 1));
+
+    //Setting tree datas
+    for (int i = leaf_start_index; i < mt->nb_nodes; i++) {
+        mt->nodes[i].data = *data_table;
+        total_size       += strlen(*data_table);
+        data_table        = data_table + strlen(*data_table);
+        mt->nodes[i].hash = NULL;
+    }
+
+    //Resets pointer
+    data_table -= total_size;
+
+}
+
+int compute_data_hashes(merkle_tree *mt, char **data_table, int nb_of_threads) {
+
+    int leaf_start_index = (1 << (mt->tree_height - 1));
+    set_tree_datas(mt, data_table);
+    int nb_leaves_per_thread = (int) leaf_start_index / nb_of_threads ;
+    int start_index;
+    pthread_t threads[nb_of_threads];
+    threaded_arg t_arg[nb_of_threads];
+
+    for (int i = 0 ; i < nb_of_threads - 1 ; i ++) {
+        //creates thread that computes the hashes
+        start_index          = leaf_start_index + (i * nb_leaves_per_thread);
+        t_arg[i].mt          = mt;
+        t_arg[i].start_index = start_index;
+        t_arg[i].nb_leaves   = nb_leaves_per_thread;
+
+        if (pthread_create(&threads[i], NULL, &threaded_hashes, (void *)&t_arg[i]) != 0)
+            return -1;
+
+    }
+
+    //The last thread potentially has to compute more than nb_leaves_per_thread
+    start_index = leaf_start_index + (nb_of_threads - 1) * nb_leaves_per_thread ;
+    t_arg[nb_of_threads - 1].mt          = mt ;
+    t_arg[nb_of_threads - 1].start_index = start_index;
+    t_arg[nb_of_threads - 1].nb_leaves   = nb_leaves_per_thread + (leaf_start_index % nb_of_threads);
+
+    if (pthread_create(&threads[nb_of_threads - 1], NULL, &threaded_hashes, (void *)&t_arg[nb_of_threads - 1]) != 0)
+        return -1;
+
+    //Waits for every thread to be done
+    for (int i = 0 ; i < nb_of_threads ; i ++) {
+        pthread_join(threads[i], NULL);
+    }
+
+
+    //Hashing root nodes
+    for (int i = leaf_start_index - 1; i > 0; i--) {
+        mt->nodes[i].hash = NULL;
+        if (hash_node(mt, i) == -1)
+            return -1;
+    }
+
+    return 0;
+}
+
+void *threaded_hashes(void *arg) {
+
+    //Getting arguments through struct
+    threaded_arg *t_arg = (threaded_arg *)arg;
+    int start_index     = t_arg->start_index;
+    int nb_leaves       = t_arg->nb_leaves;
+    merkle_tree *mt     = t_arg->mt;
+
+    for (int i = start_index ; i < start_index + nb_leaves ; i++ ) {
+        hash_node(mt, i);
+    }
+
+    return NULL;
+}
+
+
+//------------------------------------------------------------------------------
+
+// STRING FORMATTING------------------------------------------------------------
+
 //Prints hash of index i node.
 void print_hash(merkle_tree *mt, int i) {
     char *hash = mt->nodes[i].hash;
@@ -99,48 +193,6 @@ void print_tree(merkle_tree *mt) {
         printf("%d\n", i);
         print_hash(mt, i);
         printf("\n");
-    }
-}
-
-int change_tree_data(merkle_tree *mt, int indexes[], char **datas, int number) {
-    int index;
-    int data_size = 0;
-    for (int i = 0; i < number; i ++) {
-        index                 = indexes[i];
-        mt->nodes[index].data = *datas;
-        data_size            += strlen(*datas);
-        datas                += strlen(*datas);
-    }
-
-    datas -= data_size;
-    int j  = index;
-    int k  = 1;
-
-    while (j) {
-      for (int i = 0; i < number; i ++) {
-          index = indexes[i] / k ;
-          if (hash_node(mt, index) == -1)
-              return -1;
-      }
-        k *= 2;
-        j  = j / 2;
-    }
-
-    return 0;
-}
-
-void compare_trees(merkle_tree *mt_a, merkle_tree *mt_b, int index) {
-
-    if (strcmp(mt_a->nodes[index].hash, mt_b->nodes[index].hash)) {
-        printf("%s", "Difference on node number ");
-        printf("%d\n", index);
-
-        //If there is a difference and the node is not a leaf, check nodes below.
-        if (index < (1 << (mt_a->tree_height - 1)) ) {
-            compare_trees(mt_a, mt_b, 2*index);
-            compare_trees(mt_a, mt_b, 2*index+1);
-        }
-
     }
 }
 
@@ -235,7 +287,57 @@ void string_to_tree(merkle_tree *mt, char *tree_string) {
     }
 }
 
-void freeMerkleTree(merkle_tree *mt) {
+//------------------------------------------------------------------------------
+
+// COMPARISONS AND DATA CHANGES-------------------------------------------------
+
+int change_tree_data(merkle_tree *mt, int indexes[], char **datas, int number) {
+    int index;
+    int data_size = 0;
+    for (int i = 0; i < number; i ++) {
+        index                 = indexes[i];
+        mt->nodes[index].data = *datas;
+        data_size            += strlen(*datas);
+        datas                += strlen(*datas);
+    }
+
+    datas -= data_size;
+    int j  = index;
+    int k  = 1;
+
+    while (j) {
+      for (int i = 0; i < number; i ++) {
+          index = indexes[i] / k ;
+          if (hash_node(mt, index) == -1)
+              return -1;
+      }
+        k *= 2;
+        j  = j / 2;
+    }
+
+    return 0;
+}
+
+void compare_trees(merkle_tree *mt_a, merkle_tree *mt_b, int index) {
+
+    if (strcmp(mt_a->nodes[index].hash, mt_b->nodes[index].hash)) {
+        printf("%s", "Difference on node number ");
+        printf("%d\n", index);
+
+        //If there is a difference and the node is not a leaf, check nodes below.
+        if (index < (1 << (mt_a->tree_height - 1)) ) {
+            compare_trees(mt_a, mt_b, 2*index);
+            compare_trees(mt_a, mt_b, 2*index+1);
+        }
+
+    }
+}
+
+//------------------------------------------------------------------------------
+
+// FREE STRUCTURE---------------------------------------------------------------
+
+void free_merkle_tree(merkle_tree *mt) {
 
     int i;
     if (!mt)

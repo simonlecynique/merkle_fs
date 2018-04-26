@@ -3,6 +3,7 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
+#include <pthread.h>
 
 #define HASH_SIZE 256
 #define BYTE_SIZE 8
@@ -22,11 +23,24 @@ typedef struct {
     node *nodes;
 } merkle_tree;
 
+//MultiThread argument definition
+typedef struct {
+    merkle_tree *mt;
+    int start_index;
+    int nb_leaves;
+} threaded_arg;
+
 //Builds Merkle tree based on a data table to fill the leaves.
 int build_tree(merkle_tree *mt, char **data_table);
 
 //Computes hash of node i.
 int hash_node(merkle_tree *mt, int i);
+
+void set_tree_datas(merkle_tree *mt, char **data_table);
+
+int compute_data_hashes(merkle_tree *mt, char **data_table, int nb_of_threads);
+
+void *threaded_hashes(void *arg);
 
 void print_tree(merkle_tree *mt);
 
@@ -44,4 +58,4 @@ void tree_to_string(merkle_tree *mt, char tree[]);
 //Transforms string to tree.
 void string_to_tree(merkle_tree *mt, char *tree_string);
 
-void freeMerkleTree(merkle_tree *mt);
+void free_merkle_tree(merkle_tree *mt);

@@ -55,7 +55,7 @@ Alternatively, IUF hashing:
     tree_to_string and void string_to_tree :
     Turn the tree into string and vice-versa.
 
-    freeMerkleTree :
+    free_merkle_tree :
     Frees the structure.
 
 ## Parsing
