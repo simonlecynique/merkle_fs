@@ -172,22 +172,18 @@ void *m_hash_nodes(void *arg) {
     merkle_tree *mt     = t_arg->mt;
 
     int nb_level = log2(nb_leaves);
-    
+
     for (int i = 0 ; i < nb_level ; i ++) {
         for (int j = start_index ; j < start_index + nb_leaves ; j++ ) {
               if (hash_node(mt, j) == -1)
                   printf("%s\n", "c'est la merde coco" );
         }
         start_index = start_index / 2 ;
-        nb_leaves = nb_leaves / 2 ;
+        nb_leaves   = nb_leaves / 2 ;
     }
-    // for (int i = start_index ; i < start_index + nb_leaves ; i++ ) {
-    //     hash_node(mt, i);
-    // }
 
     return NULL;
 }
-
 
 //------------------------------------------------------------------------------
 

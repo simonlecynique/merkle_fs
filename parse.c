@@ -63,7 +63,7 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     //Assigning values for merkle_tree calculation
     mt->tree_height = height;
     mt->nb_nodes    = 0;
-    mt->data_blocks = tree_size;
+    mt->nb_of_leaves = tree_size;
 
      if (build_tree(mt, parsed_file) == -1)
         return -1;
@@ -78,7 +78,7 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     return 0;
 }
 
-int compute_multi_threaded_merkle(FILE **fp, merkle_tree *mt, char **result) {
+int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
 
     //File does not exist
     if (*fp == NULL)
@@ -120,12 +120,12 @@ int compute_multi_threaded_merkle(FILE **fp, merkle_tree *mt, char **result) {
     parsed_file -= ( (nb_of_pages) * PAGE_LENGTH ) ;
     file_string -= (nb_of_pages) * PAGE_LENGTH;
 
-    int height = (int) log2(tree_size) + 1;
+    int height   = (int) log2(tree_size) + 1;
 
     //Assigning values for merkle_tree calculation
     mt->tree_height = height;
     mt->nb_nodes    = 0;
-    mt->data_blocks = tree_size;
+    mt->nb_of_leaves = tree_size;
 
     m_build_tree(mt, parsed_file, 16);
 
@@ -162,7 +162,7 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
     int nb_of_pages = (int) file_size / PAGE_LENGTH;
 
     //If the new file has more pages than the tree can contain, compute a new one
-    if (nb_of_pages > mt->data_blocks)
+    if (nb_of_pages > mt->nb_of_leaves)
         return compute_merkle(fp, mt, result);
 
 

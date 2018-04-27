@@ -4,37 +4,37 @@
 
 int compute_merkle_test(void) {
 
-  FILE *fp = fopen("text_file.txt", "r");
-  merkle_tree mt_a;
-  char* result;
+    FILE *fp = fopen("text_file.txt", "r");
+    merkle_tree mt_a;
+    char* result;
 
-  compute_merkle(&fp, &mt_a, &result);
-  printf("%s\n", result );
-  return 0;
+    compute_merkle(&fp, &mt_a, &result);
+    printf("%s\n", result );
+    return 0;
 }
 
 int multi_thread_merkle_tree(void) {
-  FILE *fp = fopen("text_file.txt", "r");
-  merkle_tree mt_a;
-  char* result;
+    FILE *fp = fopen("text_file.txt", "r");
+    merkle_tree mt_a;
+    char* result;
 
-  compute_multi_threaded_merkle(&fp, &mt_a, &result);
-  printf("%s\n", result );
-  return 0;
+    m_compute_merkle(&fp, &mt_a, &result);
+    printf("%s\n", result );
+    return 0;
 }
 
 int changes_test() {
-  FILE *fp = fopen("text_file.txt", "r");
-  merkle_tree mt_a;
-  char* result;
+    FILE *fp = fopen("text_file.txt", "r");
+    merkle_tree mt_a;
+    char* result;
 
-  compute_merkle(&fp, &mt_a, &result);
-  printf("%s\n", result );
+    compute_merkle(&fp, &mt_a, &result);
+    printf("%s\n", result );
 
-  char* result2;
-  pages_in_need(18, 154829, &mt_a, &fp, &result2);
-  printf("%s\n", result );
-  return 0;
+    char* result2;
+    pages_in_need(18, 154829, &mt_a, &fp, &result2);
+    printf("%s\n", result );
+    return 0;
 }
 
 //Tests Merkle Trees by computing two different ones and comparing them.

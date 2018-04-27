@@ -19,7 +19,7 @@ typedef struct {
 typedef struct {
     int nb_nodes;
     int tree_height;
-    size_t data_blocks;
+    size_t nb_of_leaves;
     node *nodes;
 } merkle_tree;
 

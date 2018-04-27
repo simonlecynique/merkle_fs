@@ -12,6 +12,6 @@ int compute_tree_size(int index);
 //Parses a file to a char**, and computes the merkle_tree
 int compute_merkle(FILE **fp, merkle_tree *mt, char **result);
 
-int compute_multi_threaded_merkle(FILE **fp, merkle_tree *mt, char **result);
+int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result);
 
 int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **result);
