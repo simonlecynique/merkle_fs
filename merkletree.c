@@ -124,6 +124,8 @@ int m_build_tree(merkle_tree *mt, char **data_table, int nb_of_threads) {
     pthread_t threads[nb_of_threads];
     threaded_arg t_arg[nb_of_threads];
 
+    int new_start_index = leaf_start_index / (1 << ((int)log2(nb_leaves_per_thread) - 1));
+
     for (int i = 0 ; i < nb_of_threads - 1 ; i ++) {
         //creates thread that computes the hashes
         start_index          = leaf_start_index + (i * nb_leaves_per_thread);
@@ -152,7 +154,7 @@ int m_build_tree(merkle_tree *mt, char **data_table, int nb_of_threads) {
 
 
     //Hashing root nodes
-    for (int i = leaf_start_index - 1; i > 0; i--) {
+    for (int i = new_start_index ; i > 0; i--) {
         mt->nodes[i].hash = NULL;
         if (hash_node(mt, i) == -1)
             return -1;
@@ -169,9 +171,19 @@ void *m_hash_nodes(void *arg) {
     int nb_leaves       = t_arg->nb_leaves;
     merkle_tree *mt     = t_arg->mt;
 
-    for (int i = start_index ; i < start_index + nb_leaves ; i++ ) {
-        hash_node(mt, i);
+    int nb_level = log2(nb_leaves);
+    
+    for (int i = 0 ; i < nb_level ; i ++) {
+        for (int j = start_index ; j < start_index + nb_leaves ; j++ ) {
+              if (hash_node(mt, j) == -1)
+                  printf("%s\n", "c'est la merde coco" );
+        }
+        start_index = start_index / 2 ;
+        nb_leaves = nb_leaves / 2 ;
     }
+    // for (int i = start_index ; i < start_index + nb_leaves ; i++ ) {
+    //     hash_node(mt, i);
+    // }
 
     return NULL;
 }

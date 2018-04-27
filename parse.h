@@ -14,4 +14,4 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result);
 
 int compute_multi_threaded_merkle(FILE **fp, merkle_tree *mt, char **result);
 
-int pages_in_need(int size, int offset);
+int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **result);

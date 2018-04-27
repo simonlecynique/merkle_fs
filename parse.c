@@ -127,7 +127,7 @@ int compute_multi_threaded_merkle(FILE **fp, merkle_tree *mt, char **result) {
     mt->nb_nodes    = 0;
     mt->data_blocks = tree_size;
 
-    m_build_tree(mt, parsed_file, 8);
+    m_build_tree(mt, parsed_file, 16);
 
     free(file_string);
     free(parsed_file);
@@ -139,7 +139,11 @@ int compute_multi_threaded_merkle(FILE **fp, merkle_tree *mt, char **result) {
     return 0;
 }
 
-int pages_in_need(int size, int offset) {
+int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **result) {
+
+    //File does not exist
+    if (*fp == NULL)
+        return -1;
 
     int first_page = (int) offset / PAGE_LENGTH;
     int last_page  = (int) (offset + size) / PAGE_LENGTH;
@@ -151,5 +155,46 @@ int pages_in_need(int size, int offset) {
           indexes[i] = first_page + i;
     }
 
-    //Now read the file and get what you need
+    fseek(*fp, 0L, SEEK_END);
+    int file_size = ftell(*fp);
+    fseek(*fp, 0L, SEEK_SET);
+
+    int nb_of_pages = (int) file_size / PAGE_LENGTH;
+
+    //If the new file has more pages than the tree can contain, compute a new one
+    if (nb_of_pages > mt->data_blocks)
+        return compute_merkle(fp, mt, result);
+
+
+    //Reads file into file_string
+    char *file_string = malloc(file_size + 1);
+    fread(file_string, file_size, 1, *fp);
+
+    //Gets new data we need to change in the tree
+    char **new_datas = (char **) malloc(sizeof(char *) * PAGE_LENGTH * number );
+
+    file_string += (first_page * PAGE_LENGTH);
+
+    for (int i = 0 ; i < number ; i ++) {
+        *new_datas = (char *)malloc(PAGE_LENGTH);
+        strncpy(*new_datas, file_string, PAGE_LENGTH);
+        new_datas += PAGE_LENGTH;
+        file_string += PAGE_LENGTH;
+    }
+
+    //Pointers back at initial value
+    new_datas -= (number * PAGE_LENGTH);
+    file_string -= ((first_page + number) * PAGE_LENGTH);
+
+    if (change_and_rebuild(mt, indexes, new_datas, number) == -1)
+        return -1;
+
+    free(new_datas);
+    free(file_string);
+
+    *result = (char *) malloc(HASH_SIZE * mt->nb_nodes);
+    tree_to_string(mt, *result);
+
+    return 0;
+
 }

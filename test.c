@@ -23,6 +23,20 @@ int multi_thread_merkle_tree(void) {
   return 0;
 }
 
+int changes_test() {
+  FILE *fp = fopen("text_file.txt", "r");
+  merkle_tree mt_a;
+  char* result;
+
+  compute_merkle(&fp, &mt_a, &result);
+  printf("%s\n", result );
+
+  char* result2;
+  pages_in_need(18, 154829, &mt_a, &fp, &result2);
+  printf("%s\n", result );
+  return 0;
+}
+
 //Tests Merkle Trees by computing two different ones and comparing them.
 //tree_to_string is not tested here because used in parse_test.
 
@@ -82,6 +96,7 @@ int main(void) {
     //test_merkle_tree();
     //compute_merkle_test();
     multi_thread_merkle_tree();
+    //changes_test();
 
     return 0;
 }
