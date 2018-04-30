@@ -346,17 +346,31 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     char fpath[PATH_MAX];
     bb_fullpath(fpath, path);
     int k = log_syscall("pwrite", pwrite(fi->fh, buf, size, offset), 0);
-    log_msg("%s\n", "Opening file");
+
     FILE *fp = fopen(fpath, "r");
-    log_msg("%s\n", "Opened file");
     merkle_tree mt;
     char *result;
-    log_msg("%s\n", "Gonna compute tree");
-    compute_merkle(&fp, &mt, &result);
-    log_msg("%s\n", "Tree computed");
-    // fclose(fp);
-    setxattr(path, "merkle", result, strlen(result), 0, 0);
-    log_msg("%s\n", "Set attribute");
+
+    char *tree_string = (char *) malloc(sizeof(char *) * MAX_TREE_SIZE);
+    int attr_size = MAX_TREE_SIZE;
+
+    if (getxattr(fpath, "merkle", tree_string, attr_size, 0 , 0) > 0) {
+        log_msg("%s\n", "merkle attribute existed before");
+        log_msg("%s\n", tree_string);
+        string_to_tree(&mt, tree_string);
+        log_msg("%s\n", "got the shit");
+        if (pages_in_need(size, offset, &mt, &fp, &result) != -1)
+            setxattr(fpath, "merkle", result, strlen(result), 0, 0);
+    }
+
+    else {
+        log_msg("%s\n", "first merkle attribute");
+        if (compute_merkle(&fp, &mt, &result) != -1)
+            setxattr(fpath, "merkle", result, strlen(result), 0, 0);
+        log_msg("%s\n", "hello");
+    }
+
+    fclose(fp);
 
     return k;
 }

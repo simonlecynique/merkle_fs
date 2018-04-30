@@ -4,22 +4,36 @@
 
 int compute_merkle_test(void) {
 
-    FILE *fp = fopen("text_file.txt", "r");
+    FILE *fp = fopen("hello.txt", "r");
     merkle_tree mt_a;
     char* result;
 
     compute_merkle(&fp, &mt_a, &result);
     printf("%s\n", result );
+
+    merkle_tree mt_b;
+    string_to_tree(&mt_b, result);
+    char* result2;
+    result2 = (char *) malloc(HASH_SIZE * mt_b.nb_nodes);
+    tree_to_string(&mt_b, result2);
+    printf("%s\n", result2 );
+
     return 0;
 }
 
 int multi_thread_merkle_tree(void) {
-    FILE *fp = fopen("text_file.txt", "r");
+    FILE *fp = fopen("hello.txt", "r");
     merkle_tree mt_a;
     char* result;
+    merkle_tree mt_b;
 
     m_compute_merkle(&fp, &mt_a, &result);
-    printf("%s\n", result );
+    //printf("%s\n", result );
+    // string_to_tree(&mt_b, result);
+    // char* result2;
+    // result2 = (char *) malloc(HASH_SIZE * mt_b.nb_nodes);
+    // tree_to_string(&mt_b, result2);
+    // printf("%s\n", result2 );
     return 0;
 }
 
@@ -94,8 +108,8 @@ int test_merkle_tree(void) {
 int main(void) {
 
     //test_merkle_tree();
-    //compute_merkle_test();
-    multi_thread_merkle_tree();
+    compute_merkle_test();
+    //multi_thread_merkle_tree();
     //changes_test();
 
     return 0;

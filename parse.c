@@ -116,7 +116,8 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     }
 
     //Pointers back at initial value
-    parsed_file -= (tree_size - nb_of_pages - 1);
+    if (tree_size > nb_of_pages)
+        parsed_file -= (tree_size - nb_of_pages - 1);
     parsed_file -= strlen(file_string);
     parsed_file -= ( (nb_of_pages) * PAGE_LENGTH ) ;
     file_string -= (nb_of_pages) * PAGE_LENGTH;
@@ -148,7 +149,6 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
 
     int first_page = (int) offset / PAGE_LENGTH;
     int last_page  = (int) (offset + size) / PAGE_LENGTH;
-
     int number = last_page - first_page + 1;
 
     int indexes[number];
@@ -176,16 +176,32 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
 
     file_string += (first_page * PAGE_LENGTH);
 
-    for (int i = 0 ; i < number ; i ++) {
+    //TODO - If the first page and the last page is the same ?
+
+    //TODO - If if last_page is the end of the file ?
+
+    for (int i = 0 ; i < number - 1 ; i ++) {
         *new_datas = (char *)malloc(PAGE_LENGTH);
         strncpy(*new_datas, file_string, PAGE_LENGTH);
         new_datas += PAGE_LENGTH;
         file_string += PAGE_LENGTH;
     }
 
+    if (last_page == nb_of_pages) {
+      *new_datas = (char *)malloc(strlen(file_string));
+      strncpy(*new_datas, file_string, strlen(file_string));
+
+    }
+
+    else {
+        *new_datas = (char *)malloc(PAGE_LENGTH);
+        strncpy(*new_datas, file_string, PAGE_LENGTH);
+    }
+
+
     //Pointers back at initial value
-    new_datas -= (number * PAGE_LENGTH);
-    file_string -= ((first_page + number) * PAGE_LENGTH);
+    new_datas -= ((number-1) * PAGE_LENGTH);
+    file_string -= ((first_page + number - 1) * PAGE_LENGTH);
 
     if (change_and_rebuild(mt, indexes, new_datas, number) == -1)
         return -1;

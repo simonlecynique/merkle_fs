@@ -5,6 +5,7 @@
 
 #define MAXLINES 400000
 #define PAGE_LENGTH 10000
+#define MAX_TREE_SIZE 64000000
 
 //Computes closest power of two for the size of the file.
 int compute_tree_size(int index);

@@ -273,23 +273,25 @@ void string_to_tree(merkle_tree *mt, char *tree_string) {
     char **tokens;
     char **thing;
     tokens = str_split(tree_string, ',');
-
     if (tokens)
     {
         int nb_nodes;
         for (nb_nodes = 0; *(tokens + nb_nodes); nb_nodes++) {}
+
         mt->nb_nodes = nb_nodes + 1;
         mt->tree_height = (int) log2(nb_nodes + 1);
 
+        mt->nodes    = (node *) malloc(sizeof(node) * (mt->nb_nodes + 1));
         for (int i = 0; *(tokens + i); i++)
         {
             mt->nodes[i + 1].hash = (char *) malloc(sizeof(char)* 2 * HASH_SIZE / BYTE_SIZE);
             thing = str_split(*(tokens + i), ':');
             char *hash_string = *(thing + 1);
             strcpy(mt->nodes[i + 1].hash, hash_string);
+            //printf("%s\n", mt->nodes[i + 1].hash );
             //free allocated char *.
-            free(*(tokens + i));
-            free(thing);
+            // free(*(tokens + i));
+            // free(thing);
         }
         free(tokens);
     }
