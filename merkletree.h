@@ -9,6 +9,8 @@
 #define BYTE_SIZE 8
 #define HEX 4
 
+// DEFINITIONS------------------------------------------------------------------
+
 //Node of Merkle Tree definition
 typedef struct {
     char *data;
@@ -30,17 +32,23 @@ typedef struct {
     int nb_leaves;
 } threaded_arg;
 
+//SINGLE THREADED---------------------------------------------------------------
+
 //Builds Merkle tree based on a data table to fill the leaves.
 int build_tree(merkle_tree *mt, char **data_table);
 
 //Computes hash of node i.
 int hash_node(merkle_tree *mt, int i);
 
+//MULTI THREADED----------------------------------------------------------------
+
 void set_tree_datas(merkle_tree *mt, char **data_table);
 
 int m_build_tree(merkle_tree *mt, char **data_table, int nb_of_threads);
 
 void *m_hash_nodes(void *arg);
+
+//------------------------------------------------------------------------------
 
 void print_tree(merkle_tree *mt);
 

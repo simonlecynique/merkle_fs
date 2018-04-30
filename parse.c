@@ -53,7 +53,8 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     }
 
     //Pointers back at initial value
-    parsed_file -= (tree_size - nb_of_pages - 1);
+    if (tree_size > nb_of_pages)
+        parsed_file -= (tree_size - nb_of_pages - 1);
     parsed_file -= strlen(file_string);
     parsed_file -= ( (nb_of_pages) * PAGE_LENGTH ) ;
     file_string -= (nb_of_pages) * PAGE_LENGTH;
