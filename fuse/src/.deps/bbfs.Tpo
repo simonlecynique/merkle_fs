@@ -86,11 +86,11 @@ bbfs.o: bbfs.c config.h params.h \
   /usr/include/sys/resource.h /usr/include/sys/_types/_wchar_t.h \
   /usr/include/string.h /usr/include/secure/_string.h \
   /usr/include/unistd.h /usr/include/sys/unistd.h \
-  /usr/include/sys/_types/_posix_vdisable.h ../../parse.h \
-  ../../merkletree.h ../../sha3.h /usr/include/assert.h \
+  /usr/include/sys/_types/_posix_vdisable.h merkle_tree/parse.h \
+  merkle_tree/merkletree.h merkle_tree/sha3.h /usr/include/assert.h \
   /usr/include/math.h /usr/include/pthread.h \
   /usr/include/pthread/pthread_impl.h /usr/include/pthread/sched.h \
-  /usr/include/pthread/qos.h /usr/include/sys/xattr.h log.h
+  /usr/include/pthread/qos.h log.h /usr/include/sys/xattr.h
 
 config.h:
 
@@ -390,11 +390,11 @@ params.h:
 
 /usr/include/sys/_types/_posix_vdisable.h:
 
-../../parse.h:
+merkle_tree/parse.h:
 
-../../merkletree.h:
+merkle_tree/merkletree.h:
 
-../../sha3.h:
+merkle_tree/sha3.h:
 
 /usr/include/assert.h:
 
@@ -408,6 +408,6 @@ params.h:
 
 /usr/include/pthread/qos.h:
 
-/usr/include/sys/xattr.h:
-
 log.h:
+
+/usr/include/sys/xattr.h:

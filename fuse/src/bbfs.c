@@ -17,13 +17,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include "../../parse.h"
+#include "merkle_tree/parse.h"
+#include "log.h"
 
 #ifdef HAVE_SYS_XATTR_H
 #include <sys/xattr.h>
 #endif
-
-#include "log.h"
 
 //  All the paths I see are relative to the root of the mounted
 //  filesystem.  In order to get to the underlying filesystem, I need to
@@ -354,21 +353,22 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     char *tree_string = (char *) malloc(sizeof(char *) * MAX_TREE_SIZE);
     int attr_size = MAX_TREE_SIZE;
 
-    if (getxattr(fpath, "merkle", tree_string, attr_size, 0 , 0) > 0) {
-        log_msg("%s\n", "merkle attribute existed before");
-        log_msg("%s\n", tree_string);
-        string_to_tree(&mt, tree_string);
-        log_msg("%s\n", "got the shit");
-        if (pages_in_need(size, offset, &mt, &fp, &result) != -1)
-            setxattr(fpath, "merkle", result, strlen(result), 0, 0);
-    }
+    // if (getxattr(fpath, "merkle", tree_string, attr_size, 0 , 0) > 0) {
+    //     log_msg("%s\n", "merkle attribute existed before");
+    //     log_msg("%s\n", tree_string);
+    //     string_to_tree(&mt, tree_string);
+    //     log_msg("%s\n", "got the shit");
+    //     if (pages_in_need(size, offset, &mt, &fp, &result) != -1)
+    //         setxattr(fpath, "merkle", result, strlen(result), 0, 0);
+    // }
 
-    else {
+    // else {
         log_msg("%s\n", "first merkle attribute");
         if (compute_merkle(&fp, &mt, &result) != -1)
             setxattr(fpath, "merkle", result, strlen(result), 0, 0);
+        free(result);
         log_msg("%s\n", "hello");
-    }
+    // }
 
     fclose(fp);
 
