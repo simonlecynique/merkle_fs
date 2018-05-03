@@ -178,9 +178,11 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
     int last_page  = (int) (offset + size) / PAGE_LENGTH;
     int number = last_page - first_page + 1;
 
+    int leaf_start_index = (1 << (mt->tree_height - 1));
+
     int indexes[number];
     for (int i = 0 ; i < number ; i ++) {
-          indexes[i] = first_page + i;
+          indexes[i] = leaf_start_index + first_page + i;
     }
 
     fseek(*fp, 0L, SEEK_END);
@@ -190,7 +192,7 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
     int nb_of_pages = (int) file_size / PAGE_LENGTH;
 
     //If the new file has more pages than the tree can contain, compute a new one
-    if (nb_of_pages > mt->nb_of_leaves)
+    if (nb_of_pages > (mt->nb_nodes / 2))
         return compute_merkle(fp, mt, result);
 
 
@@ -198,39 +200,29 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
     char *file_string = malloc(file_size + 1);
     fread(file_string, file_size, 1, *fp);
 
-    // log_msg("%s\n", "in pages_in_need");
-    // log_msg("%d\n", nb_of_pages);
-    // log_msg("%d\n", first_page);
-    // log_msg("%d\n", last_page);
-
-
     //Gets new data we need to change in the tree
-    char **new_datas = (char **) malloc(sizeof(char *) * PAGE_LENGTH * number );
-
+    char **new_datas = (char **) calloc(number, sizeof(char **) * sizeof(char *) * PAGE_LENGTH);
+    for (int i = 0; i < number ; i++){
+      *new_datas = calloc(PAGE_LENGTH, sizeof(char *));
+      new_datas += PAGE_LENGTH;
+    }
+    new_datas = new_datas - number*PAGE_LENGTH;
     file_string += (first_page * PAGE_LENGTH);
 
-    //TODO - If the first page and the last page is the same ?
-
-    //TODO - If if last_page is the end of the file ?
-
     for (int i = 0 ; i < number - 1 ; i ++) {
-        *new_datas = (char *)malloc(PAGE_LENGTH);
         strncpy(*new_datas, file_string, PAGE_LENGTH);
         new_datas += PAGE_LENGTH;
         file_string += PAGE_LENGTH;
     }
 
     if (last_page == nb_of_pages) {
-      *new_datas = (char *)malloc(strlen(file_string));
-      strncpy(*new_datas, file_string, strlen(file_string));
+      strlcpy(*new_datas, file_string, PAGE_LENGTH);
 
     }
 
     else {
-        *new_datas = (char *)malloc(PAGE_LENGTH);
-        strncpy(*new_datas, file_string, PAGE_LENGTH);
+        strlcpy(*new_datas, file_string, PAGE_LENGTH);
     }
-
 
     //Pointers back at initial value
     new_datas -= ((number-1) * PAGE_LENGTH);

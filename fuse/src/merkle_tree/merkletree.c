@@ -293,10 +293,6 @@ void string_to_tree(merkle_tree *mt, char *tree_string) {
             thing = str_split(*(tokens + i), ':');
             char *hash_string = *(thing + 1);
             strcpy(mt->nodes[i + 1].hash, hash_string);
-            //printf("%s\n", mt->nodes[i + 1].hash );
-            //free allocated char *.
-            // free(*(tokens + i));
-            // free(thing);
         }
         free(tokens);
     }
@@ -307,28 +303,32 @@ void string_to_tree(merkle_tree *mt, char *tree_string) {
 // COMPARISONS AND DATA CHANGES-------------------------------------------------
 
 int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number) {
+
     int index;
     int data_size = 0;
     for (int i = 0; i < number; i ++) {
         index                 = indexes[i];
-        mt->nodes[index].data = *datas;
-        data_size            += strlen(*datas);
-        datas                += strlen(*datas);
+        mt->nodes[index].data = *(datas + data_size);
+        data_size            += strlen(*(datas + data_size));
     }
 
-    datas -= data_size;
-    int j  = index;
-    int k  = 1;
+    int k  = number;
+    index = indexes[0];
 
-    while (j) {
-      for (int i = 0; i < number; i ++) {
-          index = indexes[i] / k ;
+    int tree_height = mt->tree_height;
+    for (int i = 0 ; i < tree_height ; i ++) {
+        for (int j = 0 ; j < k ; j ++) {
           if (hash_node(mt, index) == -1)
               return -1;
-      }
-        k *= 2;
-        j  = j / 2;
+          index++;
+        }
+        index = index - k;
+        index = index / 2;
+        k = (k / 2) + 1;
     }
+    if (hash_node(mt, 1) == -1)
+        return -1;
+
 
     return 0;
 }
