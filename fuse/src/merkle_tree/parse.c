@@ -122,20 +122,27 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
     }
     int tree_size = compute_tree_size(nb_of_pages);
 
-    char **parsed_file = (char **)malloc(sizeof(char *) * PAGE_LENGTH * tree_size );
+    char **parsed_file = (char **) calloc(tree_size, sizeof(char **) * sizeof(char *) * PAGE_LENGTH );
+    *result = (char *) malloc(sizeof(char *) * HASH_SIZE * 2 * tree_size);
+
+    for (int i = 0; i < tree_size ; i++){
+      *parsed_file = calloc(PAGE_LENGTH, sizeof(char *));
+      parsed_file += PAGE_LENGTH;
+    }
+    parsed_file = parsed_file - tree_size*PAGE_LENGTH;
 
     for (int i = 0 ; i < nb_of_pages ; i ++) {
-        *parsed_file = (char *)malloc(PAGE_LENGTH);
         strncpy(*parsed_file, file_string, PAGE_LENGTH);
         parsed_file += PAGE_LENGTH;
         file_string += PAGE_LENGTH;
     }
 
-    *parsed_file = (char *)malloc(strlen(file_string));
+    //*parsed_file = (char *)calloc(strlen(file_string), sizeof(char *));
     strncpy(*parsed_file, file_string, strlen(file_string) );
     parsed_file += strlen(file_string);
 
     for (int i = nb_of_pages + 1; i < tree_size ; i++){
+      *parsed_file = malloc(sizeof(char*) * strlen(" "));
       *parsed_file = " ";
       parsed_file++;
     }
@@ -145,9 +152,8 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
         parsed_file -= (tree_size - nb_of_pages - 1);
     parsed_file -= strlen(file_string);
     parsed_file -= ( (nb_of_pages) * PAGE_LENGTH ) ;
-    file_string -= (nb_of_pages) * PAGE_LENGTH;
 
-    int height   = (int) log2(tree_size) + 1;
+    int height = (int) log2(tree_size) + 1;
 
     //Assigning values for merkle_tree calculation
     mt->tree_height = height;
@@ -155,15 +161,32 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
     mt->nb_of_leaves = tree_size;
 
     if (m_build_tree(mt, parsed_file, nb_threads) == -1)
-        //log_msg("%s\n", "oh putain merde");
-
-    free(file_string);
-    free(parsed_file);
+        log_msg("%s\n", "oh putain merde");
 
     //Stores result in a string
-    *result = (char *) malloc(HASH_SIZE * 2 * mt->nb_nodes);
-
     tree_to_string(mt, *result);
+
+    for (int i = 1 ; i < mt->nb_nodes ; i ++) {
+        log_msg("%d\n", i);
+
+        if (i > mt->nb_nodes / 2)
+            free(mt->nodes[i].data);
+        if (mt->nodes[i].hash)
+            free(mt->nodes[i].hash);
+    }
+    free(mt->nodes);
+
+    for (int i = 0 ; i < nb_of_pages ; i ++) {
+        free(*parsed_file);
+        parsed_file += PAGE_LENGTH;
+    }
+
+    free(*parsed_file);
+    parsed_file -= ( (nb_of_pages) * PAGE_LENGTH ) ;
+    free(parsed_file);
+
+    file_string -= (nb_of_pages) * PAGE_LENGTH;
+    free(file_string);
 
     return 0;
 }

@@ -105,18 +105,14 @@ void set_tree_datas(merkle_tree *mt, char **data_table) {
     //Setting values of Merkle Tree
     int leaf_start_index = (1 << (mt->tree_height - 1));
     mt->nb_nodes         = (1 << (mt->tree_height));
-    mt->nodes            = (node *) malloc(sizeof(node) * (mt->nb_nodes + 1));
-
+    mt->nodes    = (node *) malloc(sizeof(node) * (mt->nb_nodes + 1) * 105 * HASH_SIZE);
     //Setting tree datas
     for (int i = leaf_start_index; i < mt->nb_nodes; i++) {
-        mt->nodes[i].data = *data_table;
-        total_size       += strlen(*data_table);
-        data_table        = data_table + strlen(*data_table);
+        mt->nodes[i].data = (char *) malloc(sizeof(char *) * 200);
+        strlcpy(mt->nodes[i].data, *(data_table + total_size), 1 + strlen(*(data_table + total_size)));
+        total_size       += strlen(*(data_table + total_size));
         mt->nodes[i].hash = NULL;
     }
-
-    //Resets pointer
-    data_table -= total_size;
 
 }
 
@@ -156,7 +152,6 @@ int m_build_tree(merkle_tree *mt, char **data_table, int nb_of_threads) {
     for (int i = 0 ; i < nb_of_threads ; i ++) {
         pthread_join(threads[i], NULL);
     }
-
 
     //Hashing root nodes
     for (int i = new_start_index ; i > 0; i--) {
