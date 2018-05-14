@@ -77,6 +77,7 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     //Stores result in a string
     tree_to_string(mt, *result);
 
+    //Freeing memory
     for (int i = 1 ; i < mt->nb_nodes ; i ++) {
         if (mt->nodes[i].data)
             free(mt->nodes[i].data);
@@ -117,9 +118,11 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
     //Compute array
     int nb_of_pages = (int) file_size / PAGE_LENGTH;
 
+    //If there is less pqges than threads, we call the single-threaded method
     if (nb_of_pages < nb_threads) {
         return compute_merkle(fp, mt, result);
     }
+
     int tree_size = compute_tree_size(nb_of_pages);
 
     char **parsed_file = (char **) calloc(tree_size, sizeof(char **) * sizeof(char *) * PAGE_LENGTH );
@@ -136,8 +139,6 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
         parsed_file += PAGE_LENGTH;
         file_string += PAGE_LENGTH;
     }
-
-    //*parsed_file = (char *)calloc(strlen(file_string), sizeof(char *));
     strncpy(*parsed_file, file_string, strlen(file_string) );
     parsed_file += strlen(file_string);
 
@@ -161,11 +162,12 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
     mt->nb_of_leaves = tree_size;
 
     if (m_build_tree(mt, parsed_file, nb_threads) == -1)
-        log_msg("%s\n", "oh putain merde");
+        log_msg("%s\n", "ERROR : Tree could not build.");
 
     //Stores result in a string
     tree_to_string(mt, *result);
 
+    //Freeing memory
     for (int i = 1 ; i < mt->nb_nodes ; i ++) {
         log_msg("%d\n", i);
 
@@ -238,6 +240,7 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
         file_string += PAGE_LENGTH;
     }
 
+    //We consider the case the last page is concernerned
     if (last_page == nb_of_pages) {
       strlcpy(*new_datas, file_string, PAGE_LENGTH);
 
@@ -254,6 +257,7 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
     if (change_and_rebuild(mt, indexes, new_datas, number) == -1)
         return -1;
 
+    //Freeing memory
     free(new_datas);
     free(file_string);
 

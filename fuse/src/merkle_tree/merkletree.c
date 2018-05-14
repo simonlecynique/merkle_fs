@@ -328,6 +328,7 @@ int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number)
     return 0;
 }
 
+//To compare whole tree, call compare_trees(a,b, 1);
 void compare_trees(merkle_tree *mt_a, merkle_tree *mt_b, int index) {
 
     if (strcmp(mt_a->nodes[index].hash, mt_b->nodes[index].hash)) {
@@ -344,19 +345,3 @@ void compare_trees(merkle_tree *mt_a, merkle_tree *mt_b, int index) {
 }
 
 //------------------------------------------------------------------------------
-
-// FREE STRUCTURE---------------------------------------------------------------
-
-void free_merkle_tree(merkle_tree *mt) {
-
-    int i;
-    if (!mt)
-        return;
-    if (mt->nodes) {
-        for (i=1; i<=mt->nb_nodes; i++)
-            if(mt->nodes[i].hash)
-                free(mt->nodes[i].hash);
-        free(mt->nodes);
-    }
-    return;
-}

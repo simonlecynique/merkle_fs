@@ -65,5 +65,3 @@ void tree_to_string(merkle_tree *mt, char tree[]);
 
 //Transforms string to tree.
 void string_to_tree(merkle_tree *mt, char *tree_string);
-
-void free_merkle_tree(merkle_tree *mt);
