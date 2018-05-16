@@ -42,7 +42,7 @@ int hash_node(merkle_tree *mt, int i);
 
 //MULTI THREADED----------------------------------------------------------------
 
-void set_tree_datas(merkle_tree *mt, char **data_table);
+int set_tree_datas(merkle_tree *mt, char **data_table);
 
 int m_build_tree(merkle_tree *mt, char **data_table, int nb_of_threads);
 

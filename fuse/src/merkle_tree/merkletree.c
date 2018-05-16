@@ -112,7 +112,7 @@ int hash_node(merkle_tree *mt, int i) {
 
 //MULTI THREADED----------------------------------------------------------------
 
-void set_tree_datas(merkle_tree *mt, char **data_table) {
+int set_tree_datas(merkle_tree *mt, char **data_table) {
 
     int total_size = 0;
     //Setting values of Merkle Tree
@@ -128,18 +128,23 @@ void set_tree_datas(merkle_tree *mt, char **data_table) {
             log_msg("%s\n", "ERROR in set_tree_datas: NULL somewhere in data");
             return -1;
         }
-        
+
         strlcpy(mt->nodes[i].data, *(data_table + total_size), 1 + strlen(*(data_table + total_size)));
         total_size       += strlen(*(data_table + total_size));
         mt->nodes[i].hash = NULL;
     }
+
+    return 0;
 
 }
 
 int m_build_tree(merkle_tree *mt, char **data_table, int nb_of_threads) {
 
     int leaf_start_index = (1 << (mt->tree_height - 1));
-    set_tree_datas(mt, data_table);
+
+    if (set_tree_datas(mt, data_table) == -1)
+        return -1;
+        
     int nb_leaves_per_thread = (int) leaf_start_index / nb_of_threads ;
     int start_index;
     pthread_t threads[nb_of_threads];

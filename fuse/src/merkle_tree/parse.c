@@ -3,9 +3,6 @@
 int compute_tree_size(int index) {
     unsigned int v = index;
 
-    if (v == 0 || v==1)
-        return v+1;
-
     v--;
     v |= v >> 1;
     v |= v >> 2;
@@ -34,7 +31,7 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
 
     //Compute array
     int nb_of_pages = (int) file_size / PAGE_LENGTH;
-    int tree_size = compute_tree_size(nb_of_pages);
+    int tree_size = compute_tree_size(nb_of_pages + 1);
     char **parsed_file = (char **) calloc(tree_size, sizeof(char **) * sizeof(char *) * PAGE_LENGTH );
     *result = (char *) malloc(sizeof(char *) * HASH_SIZE * 2 * tree_size);
 
@@ -130,7 +127,7 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
         return compute_merkle(fp, mt, result);
     }
 
-    int tree_size = compute_tree_size(nb_of_pages);
+    int tree_size = compute_tree_size(nb_of_pages + 1);
 
     char **parsed_file = calloc(tree_size, sizeof(char **) * sizeof(char *) * PAGE_LENGTH );
     *result = malloc(sizeof(char *) * HASH_SIZE * 2 * tree_size);
