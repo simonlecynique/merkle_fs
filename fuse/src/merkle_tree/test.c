@@ -22,12 +22,12 @@ int compute_merkle_test(void) {
 }
 
 int multi_thread_merkle_tree(void) {
-    FILE *fp = fopen("hello.txt", "r");
+    FILE *fp = fopen("text_file.txt", "r");
     merkle_tree mt_a;
     char* result;
     merkle_tree mt_b;
 
-    m_compute_merkle(&fp, &mt_a, &result);
+    m_compute_merkle(&fp, &mt_a, &result, 8);
     //printf("%s\n", result );
     // string_to_tree(&mt_b, result);
     // char* result2;
@@ -99,17 +99,15 @@ int test_merkle_tree(void) {
 
     //---------COMPARES A AND B
     compare_trees(&mt_a, &mt_b, 1);
-    free_merkle_tree(&mt_a);
-    free_merkle_tree(&mt_b);
 
     return 0;
 }
 
 int main(void) {
 
-    test_merkle_tree();
+    //test_merkle_tree();
     //compute_merkle_test();
-    //multi_thread_merkle_tree();
+    multi_thread_merkle_tree();
     //changes_test();
 
     return 0;

@@ -350,7 +350,7 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     merkle_tree mt;
     char *result;
 
-    char *tree_string = (char *) malloc(sizeof(char *) * MAX_TREE_SIZE);
+    char *tree_string = malloc(sizeof(char *) * MAX_TREE_SIZE);
     int attr_size = MAX_TREE_SIZE;
 
     if (getxattr(fpath, "merkle", tree_string, attr_size, 0 , 0) > 0) {

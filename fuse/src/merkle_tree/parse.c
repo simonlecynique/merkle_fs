@@ -3,8 +3,8 @@
 int compute_tree_size(int index) {
     unsigned int v = index;
 
-    if (v == 0)
-        return 1;
+    if (v == 0 || v==1)
+        return v+1;
 
     v--;
     v |= v >> 1;
@@ -18,8 +18,10 @@ int compute_tree_size(int index) {
 
 int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     //File does not exist
-    if (*fp == NULL)
+    if (*fp == NULL) {
+        log_msg("%s\n", "ERROR : File does not exist");
         return -1;
+    }
 
     //Compute file size, and goes back to the beginning of the file
     fseek(*fp, 0L, SEEK_END);
@@ -71,15 +73,20 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     mt->nb_nodes    = 0;
     mt->nb_of_leaves = tree_size;
 
-    if (build_tree(mt, parsed_file) == -1)
+    if (build_tree(mt, parsed_file) == -1) {
+        log_msg("%s\n", "ERROR : Tree could not build");
         return -1;
+    }
 
     //Stores result in a string
     tree_to_string(mt, *result);
+    log_msg("%s\n", *result);
 
     //Freeing memory
     for (int i = 1 ; i < mt->nb_nodes ; i ++) {
-        if (mt->nodes[i].data)
+        //log_msg("%d\n", i);
+
+        if (i > mt->nb_nodes / 2)
             free(mt->nodes[i].data);
         if (mt->nodes[i].hash)
             free(mt->nodes[i].hash);
@@ -118,15 +125,15 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
     //Compute array
     int nb_of_pages = (int) file_size / PAGE_LENGTH;
 
-    //If there is less pqges than threads, we call the single-threaded method
+    //If there is less pages than threads, we call the single-threaded method
     if (nb_of_pages < nb_threads) {
         return compute_merkle(fp, mt, result);
     }
 
     int tree_size = compute_tree_size(nb_of_pages);
 
-    char **parsed_file = (char **) calloc(tree_size, sizeof(char **) * sizeof(char *) * PAGE_LENGTH );
-    *result = (char *) malloc(sizeof(char *) * HASH_SIZE * 2 * tree_size);
+    char **parsed_file = calloc(tree_size, sizeof(char **) * sizeof(char *) * PAGE_LENGTH );
+    *result = malloc(sizeof(char *) * HASH_SIZE * 2 * tree_size);
 
     for (int i = 0; i < tree_size ; i++){
       *parsed_file = calloc(PAGE_LENGTH, sizeof(char *));
@@ -166,10 +173,10 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
 
     //Stores result in a string
     tree_to_string(mt, *result);
+    log_msg("%s\n", *result);
 
     //Freeing memory
     for (int i = 1 ; i < mt->nb_nodes ; i ++) {
-        log_msg("%d\n", i);
 
         if (i > mt->nb_nodes / 2)
             free(mt->nodes[i].data);
@@ -196,8 +203,10 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
 int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **result) {
 
     //File does not exist
-    if (*fp == NULL)
+    if (*fp == NULL) {
+        log_msg("%s\n", "ERROR : File does not exist");
         return -1;
+    }
 
     int first_page = (int) offset / PAGE_LENGTH;
     int last_page  = (int) (offset + size) / PAGE_LENGTH;
@@ -209,24 +218,20 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
     for (int i = 0 ; i < number ; i ++) {
           indexes[i] = leaf_start_index + first_page + i;
     }
-
     fseek(*fp, 0L, SEEK_END);
     int file_size = ftell(*fp);
     fseek(*fp, 0L, SEEK_SET);
-
     int nb_of_pages = (int) file_size / PAGE_LENGTH;
-
     //If the new file has more pages than the tree can contain, compute a new one
     if (nb_of_pages > (mt->nb_nodes / 2))
         return compute_merkle(fp, mt, result);
-
 
     //Reads file into file_string
     char *file_string = malloc(file_size + 1);
     fread(file_string, file_size, 1, *fp);
 
     //Gets new data we need to change in the tree
-    char **new_datas = (char **) calloc(number, sizeof(char **) * sizeof(char *) * PAGE_LENGTH);
+    char **new_datas = calloc(number, sizeof(char **) * sizeof(char *) * PAGE_LENGTH);
     for (int i = 0; i < number ; i++){
       *new_datas = calloc(PAGE_LENGTH, sizeof(char *));
       new_datas += PAGE_LENGTH;
@@ -261,9 +266,10 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
     free(new_datas);
     free(file_string);
 
-    *result = (char *) malloc(HASH_SIZE * mt->nb_nodes);
+    *result = malloc(HASH_SIZE * mt->nb_nodes);
     tree_to_string(mt, *result);
 
+    log_msg("%s\n", *result);
     return 0;
 
 }

@@ -9,23 +9,35 @@ int build_tree(merkle_tree *mt, char **data_table) {
     //Setting values of Merkle Tree
     int leaf_start_index = (1 << (mt->tree_height - 1));
     mt->nb_nodes = (1 << (mt->tree_height));
-    mt->nodes    = (node *) malloc(sizeof(node) * (mt->nb_nodes + 1) * 105 * HASH_SIZE);
+    mt->nodes    = malloc(sizeof(node) * (mt->nb_nodes + 1) * 105 * HASH_SIZE);
 
     //Hashing leaves
     for (int i = leaf_start_index; i < mt->nb_nodes; i++) {
-        mt->nodes[i].data = (char *) malloc(sizeof(char *) * 200);
+        mt->nodes[i].data = malloc(sizeof(char *) * 200);
+
+        //If there is a problem with data, send error
+        if (*(data_table + total_data) == NULL) {
+            log_msg("%s\n", "ERROR in build_tree: NULL somewhere in data");
+            return -1;
+        }
+
+
         strlcpy(mt->nodes[i].data, *(data_table + total_data), 1 + strlen(*(data_table + total_data)));
         total_data += strlen(*(data_table + total_data));
         mt->nodes[i].hash = NULL;
+
         if (hash_node(mt, i) == -1)
             return -1;
+
     }
 
     //Hashing others
     for (int i = leaf_start_index - 1; i > 0; i--) {
         mt->nodes[i].hash = NULL;
+
         if (hash_node(mt, i) == -1)
             return -1;
+
     }
 
 
@@ -49,12 +61,13 @@ int hash_node(merkle_tree *mt, int i) {
     if (i < (1 << (mt->tree_height-1))) {
         //The two children leaves have a hash computed
         if (mt->nodes[2*i].hash && mt->nodes[2*i+1].hash) {
-            char *buffer = (char *)malloc(sizeof(char *) * 2 * HASH_SIZE / BYTE_SIZE);
+            //Memory allocation
+            char *buffer = malloc(sizeof(char *) * 2 * HASH_SIZE / BYTE_SIZE);
             memcpy(buffer, mt->nodes[2*i].hash, HASH_SIZE / BYTE_SIZE);
             memcpy(buffer + (HASH_SIZE / 8), mt->nodes[2*i+1].hash, HASH_SIZE / BYTE_SIZE);
 
             //We hash the concatenation of the two related nodes.
-            mt->nodes[i].hash = (char *)malloc(sizeof(char *) * HASH_SIZE / BYTE_SIZE);
+            mt->nodes[i].hash = malloc(sizeof(char *) * HASH_SIZE / BYTE_SIZE);
             sha3_Init256(&c);
             sha3_Update(&c, buffer, strlen(buffer));
             hash = (uint8_t *) sha3_Finalize(&c);
@@ -77,7 +90,7 @@ int hash_node(merkle_tree *mt, int i) {
     else {
         //Checks if the leaf has data to hash
         if (mt->nodes[i].data) {
-            mt->nodes[i].hash = (char *)malloc(sizeof(char *) * 2 * HASH_SIZE / BYTE_SIZE);
+            mt->nodes[i].hash = malloc(sizeof(char *) * 2 * HASH_SIZE / BYTE_SIZE);
             sha3_Init256(&c);
             sha3_Update(&c, mt->nodes[i].data, strlen(mt->nodes[i].data));
             hash = (uint8_t *)sha3_Finalize(&c);
@@ -105,10 +118,17 @@ void set_tree_datas(merkle_tree *mt, char **data_table) {
     //Setting values of Merkle Tree
     int leaf_start_index = (1 << (mt->tree_height - 1));
     mt->nb_nodes         = (1 << (mt->tree_height));
-    mt->nodes    = (node *) malloc(sizeof(node) * (mt->nb_nodes + 1) * 105 * HASH_SIZE);
+    mt->nodes            = malloc(sizeof(node) * (mt->nb_nodes + 1) * 105 * HASH_SIZE);
     //Setting tree datas
     for (int i = leaf_start_index; i < mt->nb_nodes; i++) {
-        mt->nodes[i].data = (char *) malloc(sizeof(char *) * 200);
+        mt->nodes[i].data = malloc(sizeof(char *) * 200);
+
+        //If there is a problem with data, send error
+        if (*(data_table + total_size) == NULL) {
+            log_msg("%s\n", "ERROR in set_tree_datas: NULL somewhere in data");
+            return -1;
+        }
+        
         strlcpy(mt->nodes[i].data, *(data_table + total_size), 1 + strlen(*(data_table + total_size)));
         total_size       += strlen(*(data_table + total_size));
         mt->nodes[i].hash = NULL;
@@ -176,7 +196,7 @@ void *m_hash_nodes(void *arg) {
     for (int i = 0 ; i < nb_level ; i ++) {
         for (int j = start_index ; j < start_index + nb_leaves ; j++ ) {
               if (hash_node(mt, j) == -1)
-                  printf("%s\n", "c'est la merde coco" );
+                  log_msg("%s %d\n", "Problem with node number", j );
         }
         start_index = start_index / 2 ;
         nb_leaves   = nb_leaves / 2 ;
