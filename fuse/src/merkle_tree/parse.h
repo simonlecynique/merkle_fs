@@ -3,8 +3,7 @@
 #include <string.h>
 #include "merkletree.h"
 
-#define MAXLINES 400000
-#define PAGE_LENGTH 100
+#define PAGE_LENGTH 4096
 #define MAX_TREE_SIZE 64000000
 
 //Computes closest power of two for the size of the file.
