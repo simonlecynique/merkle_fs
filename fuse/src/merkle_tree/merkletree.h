@@ -8,6 +8,7 @@
 #define HASH_SIZE 256
 #define BYTE_SIZE 8
 #define HEX 4
+#define PAGE_LENGTH 4096
 
 // DEFINITIONS------------------------------------------------------------------
 

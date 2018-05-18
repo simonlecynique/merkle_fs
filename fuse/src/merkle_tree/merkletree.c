@@ -9,12 +9,12 @@ int build_tree(merkle_tree *mt, char **data_table) {
     //Setting values of Merkle Tree
     int leaf_start_index = (1 << (mt->tree_height - 1));
     mt->nb_nodes = (1 << (mt->tree_height));
-    mt->nodes    = malloc(sizeof(node) * (mt->nb_nodes + 1) * 8192 * HASH_SIZE);
+    mt->nodes    = malloc(sizeof(node) * (mt->nb_nodes + 1) * 2 * PAGE_LENGTH * HASH_SIZE);
 
     //Hashing leaves
     for (int i = leaf_start_index; i < mt->nb_nodes; i++) {
         log_msg("%d\n", i);
-        mt->nodes[i].data = malloc(sizeof(char *) * 2 * 4096);
+        mt->nodes[i].data = malloc(sizeof(char *) * 2 * PAGE_LENGTH);
 
         //If there is a problem with data, send error
         if (*(data_table + total_data) == NULL) {

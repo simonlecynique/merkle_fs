@@ -13,6 +13,14 @@ int compute_tree_size(int index) {
     return v;
 }
 
+int is_full(int file_size) {
+
+    if (file_size % PAGE_LENGTH == 0)
+        return 1;
+
+    return 0;
+}
+
 int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     //File does not exist
     if (*fp == NULL) {
@@ -30,17 +38,11 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     fread(file_string, file_size, 1, *fp);
 
     //Compute array
-    int nb_of_pages;
-    int tree_size;
+    int page_full = is_full(file_size);
 
+    int nb_of_pages = (int) file_size / PAGE_LENGTH;
+    int tree_size = compute_tree_size(nb_of_pages + 1 - page_full);
 
-    nb_of_pages = (int) file_size / PAGE_LENGTH;
-    if (file_size % PAGE_LENGTH == 0) {
-        tree_size = compute_tree_size(nb_of_pages);
-    }
-    else {
-        tree_size = compute_tree_size(nb_of_pages + 1);
-    }
     char **parsed_file = (char **) calloc(tree_size, sizeof(char **) * sizeof(char *) * PAGE_LENGTH );
     *result = (char *) malloc(sizeof(char *) * HASH_SIZE * 2 * tree_size);
 
@@ -60,43 +62,27 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
 
     log_msg("%s\n", "Parsing last part");
 
-    if (file_size % PAGE_LENGTH == 0) {
-      for (int i = nb_of_pages; i < tree_size ; i++){
-        log_msg("%s\n", "nan mais allo");
-        *parsed_file = malloc(sizeof(char*) * strlen(" "));
-        *parsed_file = " ";
-        parsed_file++;
-      }
-    }
-    else {
-        strncpy(*parsed_file, file_string, strlen(file_string) );
-        parsed_file += strlen(file_string);
-
-        for (int i = nb_of_pages + 1; i < tree_size ; i++){
-          *parsed_file = malloc(sizeof(char*) * strlen(" "));
-          *parsed_file = " ";
-          parsed_file++;
-        }
+    if (!page_full) {
+      strncpy(*parsed_file, file_string, strlen(file_string) );
+      parsed_file += strlen(file_string);
     }
 
+    for (int i = nb_of_pages + 1 - page_full; i < tree_size ; i++){
+      *parsed_file = malloc(sizeof(char*) * strlen(" "));
+      *parsed_file = " ";
+      parsed_file++;
+    }
 
     log_msg("%s\n", "Pointers back");
 
-    //Pointers back at initial value
-    if (file_size % PAGE_LENGTH == 0) {
-      if (tree_size > nb_of_pages)
-          parsed_file -= (tree_size - nb_of_pages);
+    if (tree_size > nb_of_pages)
+        parsed_file -= (tree_size - nb_of_pages - 1 + page_full);
 
-      parsed_file -= ( (nb_of_pages) * PAGE_LENGTH ) ;
-    }
-
-    else {
-        if (tree_size > nb_of_pages)
-            parsed_file -= (tree_size - nb_of_pages - 1);
+    if (!page_full)
         parsed_file -= strlen(file_string);
-        parsed_file -= ( (nb_of_pages) * PAGE_LENGTH ) ;
-    }
 
+    parsed_file -= ( (nb_of_pages) * PAGE_LENGTH ) ;
+    //Pointers back at initial value
 
     int height = (int) log2(tree_size) + 1;
 
@@ -117,14 +103,12 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     //Freeing memory
     log_msg("%s\n", "Free tree ...");
     for (int i = 1 ; i < mt->nb_nodes ; i ++) {
-        //log_msg("%d\n", i);
 
         if (i > mt->nb_nodes / 2)
             free(mt->nodes[i].data);
         if (mt->nodes[i].hash)
             free(mt->nodes[i].hash);
     }
-    log_msg("%s\n", "Free nodes ...");
     free(mt->nodes);
 
     log_msg("%s\n", "Free pages ...");
@@ -133,7 +117,7 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
         parsed_file += PAGE_LENGTH;
     }
 
-    if (file_size % PAGE_LENGTH != 0) {
+    if (!page_full) {
         free(*parsed_file);
     }
 
@@ -162,6 +146,9 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
     fread(file_string, file_size, 1, *fp);
 
     //Compute array
+
+    int page_full = is_full(file_size);
+
     int nb_of_pages = (int) file_size / PAGE_LENGTH;
 
     //If there is less pages than threads, we call the single-threaded method
@@ -169,7 +156,7 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
         return compute_merkle(fp, mt, result);
     }
 
-    int tree_size = compute_tree_size(nb_of_pages + 1);
+    int tree_size = compute_tree_size(nb_of_pages + 1 - page_full);
 
     char **parsed_file = calloc(tree_size, sizeof(char **) * sizeof(char *) * PAGE_LENGTH );
     *result = malloc(sizeof(char *) * HASH_SIZE * 2 * tree_size);
@@ -182,13 +169,17 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
 
     for (int i = 0 ; i < nb_of_pages ; i ++) {
         strncpy(*parsed_file, file_string, PAGE_LENGTH);
+        log_msg("%d\n",strlen(*parsed_file));
         parsed_file += PAGE_LENGTH;
         file_string += PAGE_LENGTH;
     }
-    strncpy(*parsed_file, file_string, strlen(file_string) );
-    parsed_file += strlen(file_string);
 
-    for (int i = nb_of_pages + 1; i < tree_size ; i++){
+    if (!page_full) {
+      strncpy(*parsed_file, file_string, strlen(file_string) );
+      parsed_file += strlen(file_string);
+    }
+
+    for (int i = nb_of_pages + 1 - page_full; i < tree_size ; i++){
       *parsed_file = malloc(sizeof(char*) * strlen(" "));
       *parsed_file = " ";
       parsed_file++;
@@ -196,8 +187,11 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
 
     //Pointers back at initial value
     if (tree_size > nb_of_pages)
-        parsed_file -= (tree_size - nb_of_pages - 1);
-    parsed_file -= strlen(file_string);
+        parsed_file -= (tree_size - nb_of_pages - 1 + page_full);
+
+    if (!page_full)
+        parsed_file -= strlen(file_string);
+
     parsed_file -= ( (nb_of_pages) * PAGE_LENGTH ) ;
 
     int height = (int) log2(tree_size) + 1;
@@ -229,7 +223,10 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
         parsed_file += PAGE_LENGTH;
     }
 
-    free(*parsed_file);
+    if (!page_full) {
+        free(*parsed_file);
+    }
+
     parsed_file -= ( (nb_of_pages) * PAGE_LENGTH ) ;
     free(parsed_file);
 
@@ -249,6 +246,10 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
 
     int first_page = (int) offset / PAGE_LENGTH;
     int last_page  = (int) (offset + size) / PAGE_LENGTH;
+
+    if (is_full(offset + size))
+        last_page--;
+        
     int number = last_page - first_page + 1;
 
     int leaf_start_index = (1 << (mt->tree_height - 1));
