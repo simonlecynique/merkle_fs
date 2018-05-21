@@ -55,7 +55,7 @@ void print_tree(merkle_tree *mt);
 
 //Changes tree data of indexes in the argument array. The data to be inserted
 //are in the datas argument. The number of data to change is number.
-int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number);
+int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number, int mode);
 
 //Compares two trees : when different node is found,
 //searches until finding all different leaves.

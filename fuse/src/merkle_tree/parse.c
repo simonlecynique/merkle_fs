@@ -249,7 +249,7 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
 
     if (is_full(offset + size))
         last_page--;
-        
+
     int number = last_page - first_page + 1;
 
     int leaf_start_index = (1 << (mt->tree_height - 1));
@@ -299,7 +299,7 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
     new_datas -= ((number-1) * PAGE_LENGTH);
     file_string -= ((first_page + number - 1) * PAGE_LENGTH);
 
-    if (change_and_rebuild(mt, indexes, new_datas, number) == -1)
+    if (change_and_rebuild(mt, indexes, new_datas, number, 0) == -1)
         return -1;
 
     //Freeing memory
@@ -312,4 +312,33 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
     log_msg("%s\n", *result);
     return 0;
 
+}
+
+int quick_change(int size, int offset, char **buf, merkle_tree *mt, char ** result) {
+
+    if (is_full(offset) && is_full(offset + size)) {
+
+      int page_to_change = (int) offset / PAGE_LENGTH;
+      int leaf_start_index = (1 << (mt->tree_height - 1));
+
+      if (page_to_change + 1 > (mt->nb_nodes / 2))
+          return -2;
+
+      int indexes[1];
+      indexes[0] = leaf_start_index + page_to_change;
+
+      if (change_and_rebuild(mt, indexes, buf, 1, 1) == -1)
+          return -1;
+
+      *result = malloc(HASH_SIZE * mt->nb_nodes);
+      tree_to_string(mt, *result);
+
+      log_msg("%s\n", *result);
+      return 0;
+
+    }
+
+    else {
+        return -2;
+    }
 }

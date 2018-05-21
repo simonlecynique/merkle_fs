@@ -14,3 +14,5 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result);
 int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads);
 
 int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **result);
+
+int quick_change(int size, int offset, char **buf, merkle_tree *mt, char ** result);

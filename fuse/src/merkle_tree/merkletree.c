@@ -13,7 +13,6 @@ int build_tree(merkle_tree *mt, char **data_table) {
 
     //Hashing leaves
     for (int i = leaf_start_index; i < mt->nb_nodes; i++) {
-        log_msg("%d\n", i);
         mt->nodes[i].data = malloc(sizeof(char *) * 2 * PAGE_LENGTH);
 
         //If there is a problem with data, send error
@@ -21,8 +20,6 @@ int build_tree(merkle_tree *mt, char **data_table) {
             log_msg("%s\n", "ERROR in build_tree: NULL somewhere in data");
             return -1;
         }
-
-        log_msg("%d\n", strlen(*(data_table + total_data)));
 
         strlcpy(mt->nodes[i].data, *(data_table + total_data), 1 + strlen(*(data_table + total_data)));
         total_data += strlen(*(data_table + total_data));
@@ -47,7 +44,6 @@ int build_tree(merkle_tree *mt, char **data_table) {
 }
 
 int hash_node(merkle_tree *mt, int i) {
-
     //If the index is out of the range, return.
     if (i > mt->nb_nodes - 1 )
         return -1;
@@ -58,6 +54,7 @@ int hash_node(merkle_tree *mt, int i) {
     char string[HEX];
     char hash_string[HEX * HASH_SIZE / BYTE_SIZE];
     hash_string[0] = '\0';
+
 
     //The node considered is not a leaf.
     if (i < (1 << (mt->tree_height-1))) {
@@ -324,33 +321,50 @@ void string_to_tree(merkle_tree *mt, char *tree_string) {
 
 // COMPARISONS AND DATA CHANGES-------------------------------------------------
 
-int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number) {
-
+int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number, int mode) {
+  
     int index;
     int data_size = 0;
-    for (int i = 0; i < number; i ++) {
-        index                 = indexes[i];
-        mt->nodes[index].data = *(datas + data_size);
-        data_size            += strlen(*(datas + data_size));
-    }
-
-    int k  = number;
-    index = indexes[0];
-
-    int tree_height = mt->tree_height;
-    for (int i = 0 ; i < tree_height ; i ++) {
-        for (int j = 0 ; j < k ; j ++) {
-          if (hash_node(mt, index) == -1)
-              return -1;
-          index++;
+    if (mode == 0) {
+        for (int i = 0; i < number; i ++) {
+            index                 = indexes[i];
+            mt->nodes[index].data = *(datas + data_size);
+            data_size            += strlen(*(datas + data_size));
         }
-        index = index - k;
-        index = index / 2;
-        k = (k / 2) + 1;
-    }
-    if (hash_node(mt, 1) == -1)
-        return -1;
 
+        int k  = number;
+        index = indexes[0];
+
+        int tree_height = mt->tree_height;
+
+        for (int i = 0 ; i < tree_height ; i ++) {
+            for (int j = 0 ; j < k ; j ++) {
+              if (hash_node(mt, index) == -1)
+                  return -1;
+              index++;
+            }
+            index = index - k;
+            index = index / 2;
+            k = (k / 2) + 1;
+        }
+        if (hash_node(mt, 1) == -1)
+            return -1;
+    }
+
+    else {
+      for (int i = 0; i < number; i ++) {
+          index                 = indexes[i];
+          mt->nodes[index].data = malloc(sizeof(char *) * 2 * PAGE_LENGTH);
+          strlcpy(mt->nodes[index].data, *(datas + data_size), 1 + strlen(*(datas + data_size)));
+          data_size            += strlen(*(datas + data_size));
+      }
+      while (index !=0){
+          mt->nodes[index].hash = NULL;
+          if (hash_node(mt, index) == -1)
+            return -1;
+          index = index / 2;
+      }
+    }
 
     return 0;
 }
