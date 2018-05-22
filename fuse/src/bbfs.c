@@ -356,7 +356,8 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     if (getxattr(fpath, "merkle", tree_string, attr_size, 0 , 0) > 0) {
         log_msg("%s\n", "Getting previous Merkle Tree");
         string_to_tree(&mt, tree_string);
-        if (quick_change(size, offset, &buf, &mt, &result) != -2)
+        int res = quick_change(size, offset, &buf, &mt, &result);
+        if (res != -2 && res != -1)
             setxattr(fpath, "merkle", result, strlen(result), 0, 0);
         else {
             if (pages_in_need(size, offset, &mt, &fp, &result) != -1)

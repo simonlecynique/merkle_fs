@@ -101,17 +101,8 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     log_msg("%s\n", *result);
 
     //Freeing memory
-    log_msg("%s\n", "Free tree ...");
-    for (int i = 1 ; i < mt->nb_nodes ; i ++) {
+    free_merkle(mt);
 
-        if (i > mt->nb_nodes / 2)
-            free(mt->nodes[i].data);
-        if (mt->nodes[i].hash)
-            free(mt->nodes[i].hash);
-    }
-    free(mt->nodes);
-
-    log_msg("%s\n", "Free pages ...");
     for (int i = 0 ; i < nb_of_pages ; i ++) {
         free(*parsed_file);
         parsed_file += PAGE_LENGTH;
@@ -121,11 +112,9 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
         free(*parsed_file);
     }
 
-    parsed_file -= ( (nb_of_pages) * PAGE_LENGTH ) ;
+    parsed_file -= ((nb_of_pages) * PAGE_LENGTH);
+    file_string -= ((nb_of_pages) * PAGE_LENGTH);
     free(parsed_file);
-
-    log_msg("%s\n", "Free filestring ...");
-    file_string -= (nb_of_pages) * PAGE_LENGTH;
     free(file_string);
 
     return 0;
@@ -148,7 +137,6 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
     //Compute array
 
     int page_full = is_full(file_size);
-
     int nb_of_pages = (int) file_size / PAGE_LENGTH;
 
     //If there is less pages than threads, we call the single-threaded method
@@ -169,7 +157,6 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
 
     for (int i = 0 ; i < nb_of_pages ; i ++) {
         strncpy(*parsed_file, file_string, PAGE_LENGTH);
-        log_msg("%d\n",strlen(*parsed_file));
         parsed_file += PAGE_LENGTH;
         file_string += PAGE_LENGTH;
     }
@@ -209,14 +196,7 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
     log_msg("%s\n", *result);
 
     //Freeing memory
-    for (int i = 1 ; i < mt->nb_nodes ; i ++) {
-
-        if (i > mt->nb_nodes / 2)
-            free(mt->nodes[i].data);
-        if (mt->nodes[i].hash)
-            free(mt->nodes[i].hash);
-    }
-    free(mt->nodes);
+    free_merkle(mt);
 
     for (int i = 0 ; i < nb_of_pages ; i ++) {
         free(*parsed_file);
@@ -227,10 +207,9 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
         free(*parsed_file);
     }
 
-    parsed_file -= ( (nb_of_pages) * PAGE_LENGTH ) ;
+    parsed_file -= ((nb_of_pages) * PAGE_LENGTH);
+    file_string -= ((nb_of_pages) * PAGE_LENGTH);
     free(parsed_file);
-
-    file_string -= (nb_of_pages) * PAGE_LENGTH;
     free(file_string);
 
     return 0;
@@ -243,6 +222,20 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
         log_msg("%s\n", "ERROR : File does not exist");
         return -1;
     }
+
+    fseek(*fp, 0L, SEEK_END);
+    int file_size = ftell(*fp);
+    fseek(*fp, 0L, SEEK_SET);
+
+    //Reads file into file_string
+    char *file_string = malloc(file_size + 1);
+    fread(file_string, file_size, 1, *fp);
+
+    int nb_of_pages = (int) file_size / PAGE_LENGTH;
+    //If the new file has more pages than the tree can contain, compute a new one
+    if (nb_of_pages > (mt->nb_nodes / 2))
+        return compute_merkle(fp, mt, result);
+
 
     int first_page = (int) offset / PAGE_LENGTH;
     int last_page  = (int) (offset + size) / PAGE_LENGTH;
@@ -258,17 +251,6 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
     for (int i = 0 ; i < number ; i ++) {
           indexes[i] = leaf_start_index + first_page + i;
     }
-    fseek(*fp, 0L, SEEK_END);
-    int file_size = ftell(*fp);
-    fseek(*fp, 0L, SEEK_SET);
-    int nb_of_pages = (int) file_size / PAGE_LENGTH;
-    //If the new file has more pages than the tree can contain, compute a new one
-    if (nb_of_pages > (mt->nb_nodes / 2))
-        return compute_merkle(fp, mt, result);
-
-    //Reads file into file_string
-    char *file_string = malloc(file_size + 1);
-    fread(file_string, file_size, 1, *fp);
 
     //Gets new data we need to change in the tree
     char **new_datas = calloc(number, sizeof(char **) * sizeof(char *) * PAGE_LENGTH);
@@ -281,7 +263,7 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
 
     for (int i = 0 ; i < number - 1 ; i ++) {
         strncpy(*new_datas, file_string, PAGE_LENGTH);
-        new_datas += PAGE_LENGTH;
+        new_datas   += PAGE_LENGTH;
         file_string += PAGE_LENGTH;
     }
 
@@ -296,27 +278,28 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
     }
 
     //Pointers back at initial value
-    new_datas -= ((number-1) * PAGE_LENGTH);
+    new_datas   -= ((number-1) * PAGE_LENGTH);
     file_string -= ((first_page + number - 1) * PAGE_LENGTH);
 
-    if (change_and_rebuild(mt, indexes, new_datas, number, 0) == -1)
+    if (change_and_rebuild(mt, indexes, new_datas, number, FILE_MODE) == -1)
         return -1;
+
+    *result = malloc(HASH_SIZE * mt->nb_nodes);
+    tree_to_string(mt, *result);
+    log_msg("%s\n", *result);
 
     //Freeing memory
     free(new_datas);
     free(file_string);
+    free_merkle(mt);
 
-    *result = malloc(HASH_SIZE * mt->nb_nodes);
-    tree_to_string(mt, *result);
-
-    log_msg("%s\n", *result);
     return 0;
 
 }
 
 int quick_change(int size, int offset, char **buf, merkle_tree *mt, char ** result) {
 
-    if (is_full(offset) && is_full(offset + size)) {
+    if (is_full(offset)) {
 
       int page_to_change = (int) offset / PAGE_LENGTH;
       int leaf_start_index = (1 << (mt->tree_height - 1));
@@ -327,13 +310,13 @@ int quick_change(int size, int offset, char **buf, merkle_tree *mt, char ** resu
       int indexes[1];
       indexes[0] = leaf_start_index + page_to_change;
 
-      if (change_and_rebuild(mt, indexes, buf, 1, 1) == -1)
+      if (change_and_rebuild(mt, indexes, buf, 1, BUFFER_MODE) == -1)
           return -1;
 
       *result = malloc(HASH_SIZE * mt->nb_nodes);
       tree_to_string(mt, *result);
-
       log_msg("%s\n", *result);
+
       return 0;
 
     }

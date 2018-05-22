@@ -9,6 +9,8 @@
 #define BYTE_SIZE 8
 #define HEX 4
 #define PAGE_LENGTH 4096
+#define BUFFER_MODE 1
+#define FILE_MODE 0
 
 // DEFINITIONS------------------------------------------------------------------
 
@@ -36,16 +38,16 @@ typedef struct {
 //SINGLE THREADED---------------------------------------------------------------
 
 //Builds Merkle tree based on a data table to fill the leaves.
-int build_tree(merkle_tree *mt, char **data_table);
+int build_tree(merkle_tree *mt, char **datas);
 
 //Computes hash of node i.
 int hash_node(merkle_tree *mt, int i);
 
 //MULTI THREADED----------------------------------------------------------------
 
-int set_tree_datas(merkle_tree *mt, char **data_table);
+int set_tree_datas(merkle_tree *mt, char **datas);
 
-int m_build_tree(merkle_tree *mt, char **data_table, int nb_of_threads);
+int m_build_tree(merkle_tree *mt, char **datas, int nb_of_threads);
 
 void *m_hash_nodes(void *arg);
 
@@ -66,3 +68,5 @@ void tree_to_string(merkle_tree *mt, char tree[]);
 
 //Transforms string to tree.
 void string_to_tree(merkle_tree *mt, char *tree_string);
+
+void free_merkle(merkle_tree *mt);

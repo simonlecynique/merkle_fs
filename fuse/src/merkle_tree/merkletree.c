@@ -2,9 +2,9 @@
 
 //SINGLE THREADED---------------------------------------------------------------
 
-int build_tree(merkle_tree *mt, char **data_table) {
+int build_tree(merkle_tree *mt, char **datas) {
 
-    int total_data = 0;
+    int data_size = 0;
 
     //Setting values of Merkle Tree
     int leaf_start_index = (1 << (mt->tree_height - 1));
@@ -16,13 +16,13 @@ int build_tree(merkle_tree *mt, char **data_table) {
         mt->nodes[i].data = malloc(sizeof(char *) * 2 * PAGE_LENGTH);
 
         //If there is a problem with data, send error
-        if (*(data_table + total_data) == NULL) {
+        if (*(datas + data_size) == NULL) {
             log_msg("%s\n", "ERROR in build_tree: NULL somewhere in data");
             return -1;
         }
 
-        strlcpy(mt->nodes[i].data, *(data_table + total_data), 1 + strlen(*(data_table + total_data)));
-        total_data += strlen(*(data_table + total_data));
+        strlcpy(mt->nodes[i].data, *(datas + data_size), 1 + strlen(*(datas + data_size)));
+        data_size += strlen(*(datas + data_size));
         mt->nodes[i].hash = NULL;
 
         if (hash_node(mt, i) == -1)
@@ -38,7 +38,6 @@ int build_tree(merkle_tree *mt, char **data_table) {
             return -1;
 
     }
-
 
     return 0;
 }
@@ -111,7 +110,7 @@ int hash_node(merkle_tree *mt, int i) {
 
 //MULTI THREADED----------------------------------------------------------------
 
-int set_tree_datas(merkle_tree *mt, char **data_table) {
+int set_tree_datas(merkle_tree *mt, char **datas) {
 
     int total_size = 0;
     //Setting values of Merkle Tree
@@ -123,13 +122,13 @@ int set_tree_datas(merkle_tree *mt, char **data_table) {
         mt->nodes[i].data = malloc(sizeof(char *) * 200);
 
         //If there is a problem with data, send error
-        if (*(data_table + total_size) == NULL) {
+        if (*(datas + total_size) == NULL) {
             log_msg("%s\n", "ERROR in set_tree_datas: NULL somewhere in data");
             return -1;
         }
 
-        strlcpy(mt->nodes[i].data, *(data_table + total_size), 1 + strlen(*(data_table + total_size)));
-        total_size       += strlen(*(data_table + total_size));
+        strlcpy(mt->nodes[i].data, *(datas + total_size), 1 + strlen(*(datas + total_size)));
+        total_size       += strlen(*(datas + total_size));
         mt->nodes[i].hash = NULL;
     }
 
@@ -137,11 +136,11 @@ int set_tree_datas(merkle_tree *mt, char **data_table) {
 
 }
 
-int m_build_tree(merkle_tree *mt, char **data_table, int nb_of_threads) {
+int m_build_tree(merkle_tree *mt, char **datas, int nb_of_threads) {
 
     int leaf_start_index = (1 << (mt->tree_height - 1));
 
-    if (set_tree_datas(mt, data_table) == -1)
+    if (set_tree_datas(mt, datas) == -1)
         return -1;
 
     int nb_leaves_per_thread = (int) leaf_start_index / nb_of_threads ;
@@ -322,10 +321,10 @@ void string_to_tree(merkle_tree *mt, char *tree_string) {
 // COMPARISONS AND DATA CHANGES-------------------------------------------------
 
 int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number, int mode) {
-  
+
     int index;
     int data_size = 0;
-    if (mode == 0) {
+    if (mode == FILE_MODE) {
         for (int i = 0; i < number; i ++) {
             index                 = indexes[i];
             mt->nodes[index].data = *(datas + data_size);
@@ -345,7 +344,7 @@ int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number,
             }
             index = index - k;
             index = index / 2;
-            k = (k / 2) + 1;
+            k     = (k / 2) + 1;
         }
         if (hash_node(mt, 1) == -1)
             return -1;
@@ -386,3 +385,18 @@ void compare_trees(merkle_tree *mt_a, merkle_tree *mt_b, int index) {
 }
 
 //------------------------------------------------------------------------------
+
+void free_merkle(merkle_tree *mt) {
+
+    for (int i = 1 ; i < mt->nb_nodes ; i ++) {
+
+        if (i > mt->nb_nodes / 2)
+            free(mt->nodes[i].data);
+        if (mt->nodes[i].hash)
+            free(mt->nodes[i].hash);
+    }
+    
+    free(mt->nodes);
+
+    return;
+}
