@@ -116,10 +116,10 @@ int set_tree_datas(merkle_tree *mt, char **datas) {
     //Setting values of Merkle Tree
     int leaf_start_index = (1 << (mt->tree_height - 1));
     mt->nb_nodes         = (1 << (mt->tree_height));
-    mt->nodes            = malloc(sizeof(node) * (mt->nb_nodes + 1) * 105 * HASH_SIZE);
+    mt->nodes            = malloc(sizeof(node) * (mt->nb_nodes + 1) * 2 * PAGE_LENGTH * HASH_SIZE);
     //Setting tree datas
     for (int i = leaf_start_index; i < mt->nb_nodes; i++) {
-        mt->nodes[i].data = malloc(sizeof(char *) * 200);
+        mt->nodes[i].data = malloc(sizeof(char *) * 2 * PAGE_LENGTH);
 
         //If there is a problem with data, send error
         if (*(datas + total_size) == NULL) {
@@ -163,7 +163,7 @@ int m_build_tree(merkle_tree *mt, char **datas, int nb_of_threads) {
     }
 
     //The last thread potentially has to compute more than nb_leaves_per_thread
-    start_index = leaf_start_index + (nb_of_threads - 1) * nb_leaves_per_thread ;
+    start_index                          = leaf_start_index + (nb_of_threads - 1) * nb_leaves_per_thread ;
     t_arg[nb_of_threads - 1].mt          = mt ;
     t_arg[nb_of_threads - 1].start_index = start_index;
     t_arg[nb_of_threads - 1].nb_leaves   = nb_leaves_per_thread + (leaf_start_index % nb_of_threads);
@@ -230,7 +230,7 @@ void print_tree(merkle_tree *mt) {
 //Format : "1:hash,2:hash"
 void tree_to_string(merkle_tree *mt, char tree[]) {
 
-    char *tree_string = (char *) malloc(HEX * (HASH_SIZE / BYTE_SIZE) * mt->nb_nodes);
+    char *tree_string = malloc(HEX * (HASH_SIZE / BYTE_SIZE) * mt->nb_nodes);
     char *hash;
     char number_string[10];
     tree_string[0] = '\0';
@@ -301,15 +301,16 @@ void string_to_tree(merkle_tree *mt, char *tree_string) {
         int nb_nodes;
         for (nb_nodes = 0; *(tokens + nb_nodes); nb_nodes++) {}
 
-        mt->nb_nodes = nb_nodes + 1;
+        mt->nb_nodes    = nb_nodes + 1;
         mt->tree_height = (int) log2(nb_nodes + 1);
+        mt->nodes       = malloc(sizeof(node) * (mt->nb_nodes + 1) * 2 * PAGE_LENGTH * HASH_SIZE);
 
-        mt->nodes    = (node *) malloc(sizeof(node) * (mt->nb_nodes + 1));
         for (int i = 0; *(tokens + i); i++)
         {
-            mt->nodes[i + 1].hash = (char *) malloc(sizeof(char)* 2 * HASH_SIZE / BYTE_SIZE);
-            thing = str_split(*(tokens + i), ':');
-            char *hash_string = *(thing + 1);
+            mt->nodes[i + 1].hash = malloc(sizeof(char) * HEX * HASH_SIZE / BYTE_SIZE);
+            thing                 = str_split(*(tokens + i), ':');
+            char *hash_string     = *(thing + 1);
+
             strcpy(mt->nodes[i + 1].hash, hash_string);
         }
         free(tokens);
@@ -395,7 +396,7 @@ void free_merkle(merkle_tree *mt) {
         if (mt->nodes[i].hash)
             free(mt->nodes[i].hash);
     }
-    
+
     free(mt->nodes);
 
     return;

@@ -332,6 +332,9 @@ int bb_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_
  */
 // As  with read(), the documentation above is inconsistent with the
 // documentation for the write() system call.
+
+pthread_mutex_t lock;
+
 int bb_write(const char *path, const char *buf, size_t size, off_t offset,
 	     struct fuse_file_info *fi)
 {
@@ -351,17 +354,27 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     char *result;
 
     char *tree_string = malloc(sizeof(char *) * MAX_TREE_SIZE);
-    int attr_size = MAX_TREE_SIZE;
+    int attr_size     = MAX_TREE_SIZE;
 
     if (getxattr(fpath, "merkle", tree_string, attr_size, 0 , 0) > 0) {
         log_msg("%s\n", "Getting previous Merkle Tree");
+        pthread_mutex_lock(&lock);
         string_to_tree(&mt, tree_string);
+        pthread_mutex_unlock(&lock);
+        log_msg("%s\n", "Tree computed");
         int res = quick_change(size, offset, &buf, &mt, &result);
-        if (res != -2 && res != -1)
+        log_msg("%d\n", res);
+        if (res != -2 && res != -1) {
+            log_msg("%s\n", "quick_change done");
             setxattr(fpath, "merkle", result, strlen(result), 0, 0);
+        }
         else {
-            if (pages_in_need(size, offset, &mt, &fp, &result) != -1)
+            if (pages_in_need(size, offset, &mt, &fp, &result) != -1) {
+                log_msg("%s\n", "Need of page_in_need");
                 setxattr(fpath, "merkle", result, strlen(result), 0, 0);
+            }
+        //pthread_mutex_unlock(&lock);
+
         }
     }
 
@@ -926,6 +939,11 @@ int main(int argc, char *argv[])
 
     // turn over control to fuse
     fprintf(stderr, "about to call fuse_main\n");
+    if (pthread_mutex_init(&lock, NULL) != 0)
+    {
+        printf("\n mutex init failed\n");
+        return 1;
+    }
     fuse_stat = fuse_main(argc, argv, &bb_oper, bb_data);
     fprintf(stderr, "fuse_main returned %d\n", fuse_stat);
 
