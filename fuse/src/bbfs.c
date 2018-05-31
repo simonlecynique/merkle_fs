@@ -384,7 +384,7 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
             setxattr(fpath, "merkle", result, strlen(result), 0, 0);
     }
     free(result);
-
+    free(tree_string);
     fclose(fp);
 
     return k;

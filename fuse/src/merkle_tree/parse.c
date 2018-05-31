@@ -51,15 +51,11 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     }
     parsed_file = parsed_file - tree_size*PAGE_LENGTH;
 
-    log_msg("%s\n", "Parsing first part");
     for (int i = 0 ; i < nb_of_pages ; i ++) {
         strncpy(*parsed_file, file_string, PAGE_LENGTH);
-        log_msg("%d\n",strlen(*parsed_file));
         parsed_file += PAGE_LENGTH;
         file_string += PAGE_LENGTH;
     }
-
-    log_msg("%s\n", "Parsing last part");
 
     if (!page_full) {
       strncpy(*parsed_file, file_string, strlen(file_string) );
@@ -71,8 +67,6 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
       *parsed_file = " ";
       parsed_file++;
     }
-
-    log_msg("%s\n", "Pointers back");
 
     if (tree_size > nb_of_pages)
         parsed_file -= (tree_size - nb_of_pages - 1 + page_full);
@@ -89,7 +83,6 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     mt->tree_height = height;
     mt->nb_nodes    = 0;
     mt->nb_of_leaves = tree_size;
-    log_msg("%s\n", "Building tree ...");
     if (build_tree(mt, parsed_file) == -1) {
         log_msg("%s\n", "ERROR : Tree could not build");
         return -1;
@@ -252,11 +245,13 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
 
     //Gets new data we need to change in the tree
     char **new_datas = calloc(number, sizeof(char **) * sizeof(char *) * PAGE_LENGTH);
+
     for (int i = 0; i < number ; i++){
       *new_datas = calloc(PAGE_LENGTH, sizeof(char *));
       new_datas += PAGE_LENGTH;
     }
-    new_datas = new_datas - number*PAGE_LENGTH;
+
+    new_datas   = new_datas - number*PAGE_LENGTH;
     file_string += (first_page * PAGE_LENGTH);
 
     for (int i = 0 ; i < number - 1 ; i ++) {
@@ -299,7 +294,7 @@ int quick_change(int size, int offset, char **buf, merkle_tree *mt, char ** resu
 
     if (is_full(offset)) {
 
-      int page_to_change = (int) offset / PAGE_LENGTH;
+      int page_to_change   = (int) offset / PAGE_LENGTH;
       int leaf_start_index = (1 << (mt->tree_height - 1));
 
       if (page_to_change + 1 > (mt->nb_nodes / 2))
@@ -313,6 +308,7 @@ int quick_change(int size, int offset, char **buf, merkle_tree *mt, char ** resu
 
       *result = malloc(HASH_SIZE * mt->nb_nodes);
       tree_to_string(mt, *result);
+      free_merkle(mt);
 
       return 0;
 

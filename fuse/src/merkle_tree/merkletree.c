@@ -310,7 +310,6 @@ void string_to_tree(merkle_tree *mt, char *tree_string) {
             mt->nodes[i + 1].hash = malloc(sizeof(char) * HEX * HASH_SIZE / BYTE_SIZE);
             thing                 = str_split(*(tokens + i), ':');
             char *hash_string     = *(thing + 1);
-
             strcpy(mt->nodes[i + 1].hash, hash_string);
         }
         free(tokens);

@@ -115,9 +115,9 @@ int main(int argc, char const *argv[]) {
 
     if (argc < 2) {
         printf("%s\n", "Running default mode");
-        nb_threads           = 2;
-        nb_files_per_threads = 100;
-        size_of_files        = 100;
+        nb_threads           = 10;
+        nb_files_per_threads = 30;
+        size_of_files        = 1000;
     }
 
     else if (argc != 5) {
@@ -132,9 +132,9 @@ int main(int argc, char const *argv[]) {
       path = argv[4];
     }
 
-    if (!test_fs(nb_threads, nb_files_per_threads, size_of_files, "fuse/example/"))
+    if (!test_fs(nb_threads, nb_files_per_threads, size_of_files, "fuse/example/mountdir/"))
         printf("%s %d %s\n", "All", nb_threads * nb_files_per_threads, "files created." );
-    delete_files(nb_threads, nb_files_per_threads, "fuse/example/");
+    //delete_files(nb_threads, nb_files_per_threads, "fuse/example/mountdir/");
 
 
     time_t end = time(NULL);
