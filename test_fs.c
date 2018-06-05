@@ -116,7 +116,7 @@ int main(int argc, char const *argv[]) {
     if (argc < 2) {
         printf("%s\n", "Running default mode");
         nb_threads           = 10;
-        nb_files_per_threads = 30;
+        nb_files_per_threads = 10;
         size_of_files        = 1000;
     }
 

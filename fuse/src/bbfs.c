@@ -349,7 +349,7 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     bb_fullpath(fpath, path);
     int k = log_syscall("pwrite", pwrite(fi->fh, buf, size, offset), 0);
 
-    FILE *fp = fopen(fpath, "r");
+    FILE *fp;
     merkle_tree mt;
     char *result;
 
@@ -369,23 +369,24 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
             setxattr(fpath, "merkle", result, strlen(result), 0, 0);
         }
         else {
+            fp = fopen(fpath, "r");
             if (pages_in_need(size, offset, &mt, &fp, &result) != -1) {
                 log_msg("%s\n", "Need of page_in_need");
                 setxattr(fpath, "merkle", result, strlen(result), 0, 0);
             }
-        //pthread_mutex_unlock(&lock);
-
+            fclose(fp);
         }
     }
 
     else {
         log_msg("%s\n", "First merkle attribute");
+        fp = fopen(fpath, "r");
         if (m_compute_merkle(&fp, &mt, &result, 8) != -1)
             setxattr(fpath, "merkle", result, strlen(result), 0, 0);
+        fclose(fp);
     }
     free(result);
     free(tree_string);
-    fclose(fp);
 
     return k;
 }

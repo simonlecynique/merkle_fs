@@ -89,14 +89,21 @@ int hash_node(merkle_tree *mt, int i) {
         //Checks if the leaf has data to hash
         if (mt->nodes[i].data) {
             mt->nodes[i].hash = malloc(sizeof(char *) * 2 * HASH_SIZE / BYTE_SIZE);
-            sha3_Init256(&c);
-            sha3_Update(&c, mt->nodes[i].data, strlen(mt->nodes[i].data));
-            hash = (uint8_t *)sha3_Finalize(&c);
-            for (int j=0 ; j < (HASH_SIZE / BYTE_SIZE) ; j++) {
-                sprintf(string, "%x", hash[j]);
-                strcat(hash_string, string);
+            if (!strcmp(mt->nodes[i].data, " ")) {
+                strcpy(mt->nodes[i].hash, "60e893e6d54d8526e55a81f98bfac5da236bb23e84ed5967a8f527d5bf3d4a4");
             }
-            strcpy(mt->nodes[i].hash, hash_string);
+
+            else {
+                sha3_Init256(&c);
+                sha3_Update(&c, mt->nodes[i].data, strlen(mt->nodes[i].data));
+                hash = (uint8_t *)sha3_Finalize(&c);
+                for (int j=0 ; j < (HASH_SIZE / BYTE_SIZE) ; j++) {
+                    sprintf(string, "%x", hash[j]);
+                    strcat(hash_string, string);
+                }
+                strcpy(mt->nodes[i].hash, hash_string);
+            }
+
         }
         //If it does not, return an error
         else {
@@ -305,9 +312,10 @@ void string_to_tree(merkle_tree *mt, char *tree_string) {
         mt->tree_height = (int) log2(nb_nodes + 1);
         mt->nodes       = malloc(sizeof(node) * (mt->nb_nodes + 1) * 2 * PAGE_LENGTH * HASH_SIZE);
 
+
         for (int i = 0; *(tokens + i); i++)
         {
-            mt->nodes[i + 1].hash = malloc(sizeof(char) * HEX * HASH_SIZE / BYTE_SIZE);
+            mt->nodes[i + 1].hash = malloc(sizeof(char *) * 2 * HASH_SIZE / BYTE_SIZE);
             thing                 = str_split(*(tokens + i), ':');
             char *hash_string     = *(thing + 1);
             strcpy(mt->nodes[i + 1].hash, hash_string);
