@@ -332,9 +332,6 @@ int bb_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_
  */
 // As  with read(), the documentation above is inconsistent with the
 // documentation for the write() system call.
-
-pthread_mutex_t lock;
-
 int bb_write(const char *path, const char *buf, size_t size, off_t offset,
 	     struct fuse_file_info *fi)
 {
@@ -349,44 +346,36 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     bb_fullpath(fpath, path);
     int k = log_syscall("pwrite", pwrite(fi->fh, buf, size, offset), 0);
 
-    FILE *fp;
+    FILE *fp = fopen(fpath, "r");
     merkle_tree mt;
     char *result;
 
     char *tree_string = malloc(sizeof(char *) * MAX_TREE_SIZE);
-    int attr_size     = MAX_TREE_SIZE;
-
-    if (getxattr(fpath, "merkle", tree_string, attr_size, 0 , 0) > 0) {
+    int attr_size = MAX_TREE_SIZE;
+    if (getxattr(fpath, "merkle", tree_string, attr_size) > 0) {
         log_msg("%s\n", "Getting previous Merkle Tree");
-        pthread_mutex_lock(&lock);
         string_to_tree(&mt, tree_string);
-        pthread_mutex_unlock(&lock);
-        log_msg("%s\n", "Tree computed");
         int res = quick_change(size, offset, &buf, &mt, &result);
-        log_msg("%d\n", res);
-        if (res != -2 && res != -1) {
-            log_msg("%s\n", "quick_change done");
-            setxattr(fpath, "merkle", result, strlen(result), 0, 0);
-        }
+        if (res != -2 && res != -1)
+            setxattr(fpath, "merkle", result, strlen(result), 0);
         else {
-            fp = fopen(fpath, "r");
-            if (pages_in_need(size, offset, &mt, &fp, &result) != -1) {
-                log_msg("%s\n", "Need of page_in_need");
-                setxattr(fpath, "merkle", result, strlen(result), 0, 0);
-            }
-            fclose(fp);
+            if (pages_in_need(size, offset, &mt, &fp, &result) != -1)
+                setxattr(fpath, "merkle", result, strlen(result), 0);
         }
     }
 
     else {
+	log_msg("%d\n", getxattr(fpath, "merkle", tree_string, attr_size));
         log_msg("%s\n", "First merkle attribute");
-        fp = fopen(fpath, "r");
-        if (m_compute_merkle(&fp, &mt, &result, 8) != -1)
-            setxattr(fpath, "merkle", result, strlen(result), 0, 0);
-        fclose(fp);
+        if (m_compute_merkle(&fp, &mt, &result, 8) != -1) {
+		log_msg("%s", "Salut gros fdp");
+		log_msg("%d\n", setxattr(fpath, "merkle", result, strlen(result), 0));
+		log_msg("%s\n", strerror(errno));	
+	}
     }
     free(result);
-    free(tree_string);
+
+    fclose(fp);
 
     return k;
 }
@@ -512,7 +501,7 @@ int bb_setxattr(const char *path, const char *name, const char *value, size_t si
 	    path, name, value, size, flags);
     bb_fullpath(fpath, path);
 
-    return log_syscall("lsetxattr", setxattr(fpath, name, value, size, 0, flags), 0);
+    return log_syscall("lsetxattr", setxattr(fpath, name, value, size, flags), 0);
 }
 
 /** Get extended attributes */
@@ -525,7 +514,7 @@ int bb_getxattr(const char *path, const char *name, char *value, size_t size, ui
 	    path, name, value, size);
     bb_fullpath(fpath, path);
 
-    retstat = log_syscall("lgetxattr", getxattr(fpath, name, value, size, 0, 0 ), 0);
+    retstat = log_syscall("lgetxattr", getxattr(fpath, name, value, size), 0);
     if (retstat >= 0)
 	log_msg("    value = \"%s\"\n", value);
 
@@ -544,7 +533,7 @@ int bb_listxattr(const char *path, char *list, size_t size)
 	    );
     bb_fullpath(fpath, path);
 
-    retstat = log_syscall("llistxattr", listxattr(fpath, list, size,  0), 0);
+    retstat = log_syscall("llistxattr", listxattr(fpath, list, size), 0);
     if (retstat >= 0) {
 	log_msg("    returned attributes (length %d):\n", retstat);
 	if (list != NULL)
@@ -566,7 +555,8 @@ int bb_removexattr(const char *path, const char *name)
 	    path, name);
     bb_fullpath(fpath, path);
 
-    return log_syscall("lremovexattr", removexattr(fpath, name, 0), 0);
+    return log_syscall("lremovexattr", removexattr(fpath, name), 0);
+
 }
 #endif
 
@@ -940,11 +930,6 @@ int main(int argc, char *argv[])
 
     // turn over control to fuse
     fprintf(stderr, "about to call fuse_main\n");
-    if (pthread_mutex_init(&lock, NULL) != 0)
-    {
-        printf("\n mutex init failed\n");
-        return 1;
-    }
     fuse_stat = fuse_main(argc, argv, &bb_oper, bb_data);
     fprintf(stderr, "fuse_main returned %d\n", fuse_stat);
 
