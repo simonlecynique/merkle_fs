@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#define PAGE_LENGTH 4096
+#define PAGE_LENGTH 65536
 
 int test_fs(int nb_threads, int nb_files_per_threads, int size_of_file, char *path);
 

@@ -342,20 +342,29 @@ int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number,
         int k  = number;
         index = indexes[0];
 
+        for (int j = 0 ; j < k ; j ++) {
+          if (hash_node(mt, index) == -1)
+              return -1;
+          index++;
+        }
+        index = index - k;
+        index = index / 2;
+        k     = (k / 2) + 1;
+
         int tree_height = mt->tree_height;
 
         for (int i = 0 ; i < tree_height ; i ++) {
             for (int j = 0 ; j < k ; j ++) {
-              if (hash_node(mt, index) == -1)
-                  return -1;
+              log_msg("%s\n", "aqui");
+              mt->nodes[index].hash = malloc(sizeof(char *)* strlen("deprecated"));
+              strcpy(mt->nodes[index].hash, "deprecated");
               index++;
             }
             index = index - k;
             index = index / 2;
             k     = (k / 2) + 1;
         }
-        if (hash_node(mt, 1) == -1)
-            return -1;
+        mt->nodes[1].hash = "deprecated";
     }
 
     else {
@@ -365,10 +374,16 @@ int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number,
           strlcpy(mt->nodes[index].data, *(datas + data_size), 1 + strlen(*(datas + data_size)));
           data_size            += strlen(*(datas + data_size));
       }
+
+      mt->nodes[index].hash = NULL;
+      if (hash_node(mt, index) == -1)
+        return -1;
+      index = index / 2;
+
       while (index !=0){
-          mt->nodes[index].hash = NULL;
-          if (hash_node(mt, index) == -1)
-            return -1;
+          mt->nodes[index].hash = malloc(sizeof(char *)* strlen("deprecated"));
+          strcpy(mt->nodes[index].hash, "deprecated");
+          log_msg("%s\n", "there");
           index = index / 2;
       }
     }
