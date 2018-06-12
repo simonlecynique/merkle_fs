@@ -228,8 +228,8 @@ int bb_chown(const char *path, uid_t uid, gid_t gid)
 {
     char fpath[PATH_MAX];
 
-    log_msg("\nbb_chown(path=\"%s\", uid=%d, gid=%d)\n",
-	    path, uid, gid);
+    // log_msg("\nbb_chown(path=\"%s\", uid=%d, gid=%d)\n",
+	  //   path, uid, gid);
     bb_fullpath(fpath, path);
 
     return log_syscall("chown", chown(fpath, uid, gid), 0);
@@ -240,8 +240,8 @@ int bb_truncate(const char *path, off_t newsize)
 {
     char fpath[PATH_MAX];
 
-    log_msg("\nbb_truncate(path=\"%s\", newsize=%lld)\n",
-	    path, newsize);
+    // log_msg("\nbb_truncate(path=\"%s\", newsize=%lld)\n",
+	  //   path, newsize);
     bb_fullpath(fpath, path);
 
     return log_syscall("truncate", truncate(fpath, newsize), 0);
@@ -253,8 +253,8 @@ int bb_utime(const char *path, struct utimbuf *ubuf)
 {
     char fpath[PATH_MAX];
 
-    log_msg("\nbb_utime(path=\"%s\", ubuf=0x%08x)\n",
-	    path, ubuf);
+    // log_msg("\nbb_utime(path=\"%s\", ubuf=0x%08x)\n",
+	  //   path, ubuf);
     bb_fullpath(fpath, path);
 
     return log_syscall("utime", utime(fpath, ubuf), 0);
@@ -276,8 +276,8 @@ int bb_open(const char *path, struct fuse_file_info *fi)
     int fd;
     char fpath[PATH_MAX];
 
-    log_msg("\nbb_open(path\"%s\", fi=0x%08x)\n",
-	    path, fi);
+    // log_msg("\nbb_open(path\"%s\", fi=0x%08x)\n",
+	  //   path, fi);
     bb_fullpath(fpath, path);
 
     // if the open call succeeds, my retstat is the file descriptor,
@@ -314,8 +314,8 @@ int bb_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_
 {
     int retstat = 0;
 
-    log_msg("\nbb_read(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
-	    path, buf, size, offset, fi);
+    // log_msg("\nbb_read(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
+	  //   path, buf, size, offset, fi);
     // no need to get fpath on this one, since I work from fi->fh not the path
     log_fi(fi);
 
@@ -340,9 +340,9 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
 {
     int retstat = 0;
 
-    log_msg("\nbb_write(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
-	    path, buf, size, offset, fi
-	    );
+    // log_msg("\nbb_write(path=\"%s\", buf=0x%08x, size=%d, offset=%lld, fi=0x%08x)\n",
+	  //   path, buf, size, offset, fi
+	  //   );
     // no need to get fpath on this one, since I work from fi->fh not the path
     //log_fi(fi);
     char fpath[PATH_MAX];
@@ -353,25 +353,26 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     merkle_tree mt;
     char *result;
 
-    char *tree_string = malloc(sizeof(char *) * MAX_TREE_SIZE);
-    int attr_size     = MAX_TREE_SIZE;
+    int attr_size     = getxattr(fpath, "merkle", NULL, 0, 0 , 0);
+    char *tree_string = calloc(sizeof(char *) * attr_size, 1);
 
     if (getxattr(fpath, "merkle", tree_string, attr_size, 0 , 0) > 0) {
         log_msg("%s\n", "Getting previous Merkle Tree");
+        log_msg("%d\n", strlen(tree_string));
         pthread_mutex_lock(&lock);
         string_to_tree(&mt, tree_string);
         pthread_mutex_unlock(&lock);
-        log_msg("%s\n", "Tree computed");
+        //log_msg("%s\n", "Tree computed");
         int res = quick_change(size, offset, &buf, &mt, &result);
-        log_msg("%d\n", res);
+        //log_msg("%d\n", res);
         if (res != -2 && res != -1) {
-            log_msg("%s\n", "quick_change done");
+            //log_msg("%s\n", "quick_change done");
             setxattr(fpath, "merkle", result, strlen(result), 0, 0);
         }
         else {
             fp = fopen(fpath, "r");
             if (pages_in_need(size, offset, &mt, &fp, &result) != -1) {
-                log_msg("%s\n", "Need of page_in_need");
+                //log_msg("%s\n", "Need of page_in_need");
                 setxattr(fpath, "merkle", result, strlen(result), 0, 0);
             }
             fclose(fp);
@@ -379,7 +380,7 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     }
 
     else {
-        log_msg("%s\n", "First merkle attribute");
+        //log_msg("%s\n", "First merkle attribute");
         fp = fopen(fpath, "r");
         if (m_compute_merkle(&fp, &mt, &result, 8) != -1)
             setxattr(fpath, "merkle", result, strlen(result), 0, 0);
@@ -441,9 +442,9 @@ int bb_statfs(const char *path, struct statvfs *statv)
 // this is a no-op in BBFS.  It just logs the call and returns success
 int bb_flush(const char *path, struct fuse_file_info *fi)
 {
-    log_msg("\nbb_flush(path=\"%s\", fi=0x%08x)\n", path, fi);
+    // log_msg("\nbb_flush(path=\"%s\", fi=0x%08x)\n", path, fi);
     // no need to get fpath on this one, since I work from fi->fh not the path
-    log_fi(fi);
+    //log_fi(fi);
 
     return 0;
 }
@@ -464,9 +465,9 @@ int bb_flush(const char *path, struct fuse_file_info *fi)
  */
 int bb_release(const char *path, struct fuse_file_info *fi)
 {
-    log_msg("\nbb_release(path=\"%s\", fi=0x%08x)\n",
-	  path, fi);
-    log_fi(fi);
+    // log_msg("\nbb_release(path=\"%s\", fi=0x%08x)\n",
+	  // path, fi);
+    //log_fi(fi);
 
     // We need to close the file.  Had we allocated any resources
     // (buffers etc) we'd need to free them here as well.
@@ -482,9 +483,9 @@ int bb_release(const char *path, struct fuse_file_info *fi)
  */
 int bb_fsync(const char *path, int datasync, struct fuse_file_info *fi)
 {
-    log_msg("\nbb_fsync(path=\"%s\", datasync=%d, fi=0x%08x)\n",
-	    path, datasync, fi);
-    log_fi(fi);
+    // log_msg("\nbb_fsync(path=\"%s\", datasync=%d, fi=0x%08x)\n",
+	  //   path, datasync, fi);
+    //log_fi(fi);
 
     // some unix-like systems (notably freebsd) don't have a datasync call
 #ifdef HAVE_FDATASYNC
@@ -508,8 +509,8 @@ int bb_setxattr(const char *path, const char *name, const char *value, size_t si
 {
     char fpath[PATH_MAX];
 
-    log_msg("\nbb_setxattr(path=\"%s\", name=\"%s\", value=\"%s\", size=%d, flags=0x%08x)\n",
-	    path, name, value, size, flags);
+    // log_msg("\nbb_setxattr(path=\"%s\", name=\"%s\", value=\"%s\", size=%d, flags=0x%08x)\n",
+	  //   path, name, value, size, flags);
     bb_fullpath(fpath, path);
 
     return log_syscall("lsetxattr", setxattr(fpath, name, value, size, 0, flags), 0);
@@ -521,8 +522,8 @@ int bb_getxattr(const char *path, const char *name, char *value, size_t size, ui
     int retstat = 0;
     char fpath[PATH_MAX];
 
-    log_msg("\nbb_getxattr(path = \"%s\", name = \"%s\", value = 0x%08x, size = %d)\n",
-	    path, name, value, size);
+    // log_msg("\nbb_getxattr(path = \"%s\", name = \"%s\", value = 0x%08x, size = %d)\n",
+	  //   path, name, value, size);
     bb_fullpath(fpath, path);
 
     retstat = log_syscall("lgetxattr", getxattr(fpath, name, value, size, 0, 0 ), 0);
@@ -539,14 +540,14 @@ int bb_listxattr(const char *path, char *list, size_t size)
     char fpath[PATH_MAX];
     char *ptr;
 
-    log_msg("\nbb_listxattr(path=\"%s\", list=0x%08x, size=%d)\n",
-	    path, list, size
-	    );
+    // log_msg("\nbb_listxattr(path=\"%s\", list=0x%08x, size=%d)\n",
+	  //   path, list, size
+	  //   );
     bb_fullpath(fpath, path);
 
     retstat = log_syscall("llistxattr", listxattr(fpath, list, size,  0), 0);
     if (retstat >= 0) {
-	log_msg("    returned attributes (length %d):\n", retstat);
+	// log_msg("    returned attributes (length %d):\n", retstat);
 	if (list != NULL)
 	    for (ptr = list; ptr < list + retstat; ptr += strlen(ptr)+1)
 		log_msg("    \"%s\"\n", ptr);
@@ -562,8 +563,8 @@ int bb_removexattr(const char *path, const char *name)
 {
     char fpath[PATH_MAX];
 
-    log_msg("\nbb_removexattr(path=\"%s\", name=\"%s\")\n",
-	    path, name);
+    // log_msg("\nbb_removexattr(path=\"%s\", name=\"%s\")\n",
+	  //   path, name);
     bb_fullpath(fpath, path);
 
     return log_syscall("lremovexattr", removexattr(fpath, name, 0), 0);
@@ -583,14 +584,14 @@ int bb_opendir(const char *path, struct fuse_file_info *fi)
     int retstat = 0;
     char fpath[PATH_MAX];
 
-    log_msg("\nbb_opendir(path=\"%s\", fi=0x%08x)\n",
-	  path, fi);
+    // log_msg("\nbb_opendir(path=\"%s\", fi=0x%08x)\n",
+	  // path, fi);
     bb_fullpath(fpath, path);
 
     // since opendir returns a pointer, takes some custom handling of
     // return status.
     dp = opendir(fpath);
-    log_msg("    opendir returned 0x%p\n", dp);
+    // log_msg("    opendir returned 0x%p\n", dp);
     if (dp == NULL)
 	retstat = log_error("bb_opendir opendir");
 
@@ -630,8 +631,8 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
     DIR *dp;
     struct dirent *de;
 
-    log_msg("\nbb_readdir(path=\"%s\", buf=0x%08x, filler=0x%08x, offset=%lld, fi=0x%08x)\n",
-	    path, buf, filler, offset, fi);
+    // log_msg("\nbb_readdir(path=\"%s\", buf=0x%08x, filler=0x%08x, offset=%lld, fi=0x%08x)\n",
+	  //   path, buf, filler, offset, fi);
     // once again, no need for fullpath -- but note that I need to cast fi->fh
     dp = (DIR *) (uintptr_t) fi->fh;
 
@@ -640,7 +641,7 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
     // error; near as I can tell, that's the only condition under
     // which I can get an error from readdir()
     de = readdir(dp);
-    log_msg("    readdir returned 0x%p\n", de);
+    // log_msg("    readdir returned 0x%p\n", de);
     if (de == 0) {
 	retstat = log_error("bb_readdir readdir");
 	return retstat;
@@ -651,9 +652,9 @@ int bb_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset
     // returns something non-zero.  The first case just means I've
     // read the whole directory; the second means the buffer is full.
     do {
-	log_msg("calling filler with name %s\n", de->d_name);
+	// log_msg("calling filler with name %s\n", de->d_name);
 	if (filler(buf, de->d_name, NULL, 0) != 0) {
-	    log_msg("    ERROR bb_readdir filler:  buffer full");
+	    // log_msg("    ERROR bb_readdir filler:  buffer full");
 	    return -ENOMEM;
 	}
     } while ((de = readdir(dp)) != NULL);
@@ -671,9 +672,9 @@ int bb_releasedir(const char *path, struct fuse_file_info *fi)
 {
     int retstat = 0;
 
-    log_msg("\nbb_releasedir(path=\"%s\", fi=0x%08x)\n",
-	    path, fi);
-    log_fi(fi);
+    // log_msg("\nbb_releasedir(path=\"%s\", fi=0x%08x)\n",
+	  //   path, fi);
+    // log_fi(fi);
 
     closedir((DIR *) (uintptr_t) fi->fh);
 
@@ -693,9 +694,9 @@ int bb_fsyncdir(const char *path, int datasync, struct fuse_file_info *fi)
 {
     int retstat = 0;
 
-    log_msg("\nbb_fsyncdir(path=\"%s\", datasync=%d, fi=0x%08x)\n",
-	    path, datasync, fi);
-    log_fi(fi);
+    // log_msg("\nbb_fsyncdir(path=\"%s\", datasync=%d, fi=0x%08x)\n",
+	  //   path, datasync, fi);
+    // log_fi(fi);
 
     return retstat;
 }
@@ -719,7 +720,7 @@ int bb_fsyncdir(const char *path, int datasync, struct fuse_file_info *fi)
 // FUSE).
 void *bb_init(struct fuse_conn_info *conn)
 {
-    log_msg("\nbb_init()\n");
+    //log_msg("\nbb_init()\n");
 
     log_conn(conn);
     log_fuse_context(fuse_get_context());
@@ -736,7 +737,8 @@ void *bb_init(struct fuse_conn_info *conn)
  */
 void bb_destroy(void *userdata)
 {
-    log_msg("\nbb_destroy(userdata=0x%08x)\n", userdata);
+    // log_msg("\nbb_destroy(userdata=0x%08x)\n", userdata);
+    return;
 }
 
 /**
@@ -755,8 +757,8 @@ int bb_access(const char *path, int mask)
 
     int retstat = 0;
     char fpath[PATH_MAX];
-    log_msg("\nbb_access(path=\"%s\", mask=0%o)\n",
-	    path, mask);
+    // log_msg("\nbb_access(path=\"%s\", mask=0%o)\n",
+	  //   path, mask);
     bb_fullpath(fpath, path);
     retstat = access(fpath, mask);
 
@@ -797,9 +799,9 @@ int bb_ftruncate(const char *path, off_t offset, struct fuse_file_info *fi)
 {
     int retstat = 0;
 
-    log_msg("\nbb_ftruncate(path=\"%s\", offset=%lld, fi=0x%08x)\n",
-	    path, offset, fi);
-    log_fi(fi);
+    // log_msg("\nbb_ftruncate(path=\"%s\", offset=%lld, fi=0x%08x)\n",
+	  //   path, offset, fi);
+    //log_fi(fi);
 
     retstat = ftruncate(fi->fh, offset);
     if (retstat < 0)
@@ -824,8 +826,8 @@ int bb_fgetattr(const char *path, struct stat *statbuf, struct fuse_file_info *f
 {
     int retstat = 0;
 
-    log_msg("\nbb_fgetattr(path=\"%s\", statbuf=0x%08x, fi=0x%08x)\n",
-	    path, statbuf, fi);
+    // log_msg("\nbb_fgetattr(path=\"%s\", statbuf=0x%08x, fi=0x%08x)\n",
+	  //   path, statbuf, fi);
     log_fi(fi);
 
     // On FreeBSD, trying to do anything with the mountpoint ends up
