@@ -238,7 +238,7 @@ void print_tree(merkle_tree *mt) {
 //Format : "1:hash,2:hash"
 void tree_to_string(merkle_tree *mt, char tree[]) {
 
-    char *tree_string = malloc(2 * (HASH_SIZE / BYTE_SIZE) * mt->nb_nodes);
+    char *tree_string = malloc(HEX * (HASH_SIZE / BYTE_SIZE) * mt->nb_nodes);
     char *hash;
     char number_string[10];
     tree_string[0] = '\0';
@@ -356,7 +356,6 @@ int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number,
 
         for (int i = 0 ; i < tree_height ; i ++) {
             for (int j = 0 ; j < k ; j ++) {
-              //log_msg("%s\n", "aqui");
               mt->nodes[index].hash = malloc(sizeof(char *)* strlen("deprecated"));
               strcpy(mt->nodes[index].hash, "deprecated");
               index++;
@@ -365,7 +364,6 @@ int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number,
             index = index / 2;
             k     = (k / 2) + 1;
         }
-        //mt->nodes[1].hash = "deprecated";
     }
 
     else {
@@ -384,7 +382,6 @@ int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number,
       while (index !=0){
           mt->nodes[index].hash = malloc(sizeof(char *)* strlen("deprecated"));
           strcpy(mt->nodes[index].hash, "deprecated");
-          //log_msg("%s\n", "there");
           index = index / 2;
       }
     }

@@ -92,8 +92,9 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     int page_full      = is_full(file_size);
     int nb_of_pages    = (int) file_size / PAGE_LENGTH;
     int tree_size      = compute_tree_size(nb_of_pages + 1 - page_full);
-    char **parsed_file = calloc(tree_size, sizeof(char **) * sizeof(char *) * PAGE_LENGTH );
 
+    //Memory allocation
+    char **parsed_file = calloc(tree_size, sizeof(char **) * sizeof(char *) * PAGE_LENGTH );
     *result = malloc(sizeof(char *) * HASH_SIZE * 2 * tree_size);
 
     for (int i = 0; i < tree_size ; i++){
@@ -102,16 +103,15 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     }
     parsed_file = parsed_file - tree_size*PAGE_LENGTH;
 
+    //File parsing
     parse_file(parsed_file, &file_string, nb_of_pages, tree_size, page_full);
-    //Pointers back at initial value
-
-    int height = (int) log2(tree_size) + 1;
 
     //Assigning values for merkle_tree calculation
+    int height = (int) log2(tree_size) + 1;
     mt->tree_height = height;
     mt->nb_nodes    = 0;
     mt->nb_of_leaves = tree_size;
-    //log_msg("%s\n", "Building tree ...");
+
     if (build_tree(mt, parsed_file) == -1) {
         log_msg("%s\n", "ERROR : Tree could not build");
         return -1;
@@ -119,13 +119,10 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
 
     //Stores result in a string
     tree_to_string(mt, *result);
-    //log_msg("%s\n", *result);
 
     //Freeing memory
     free_merkle(mt);
-
     free_file(parsed_file,nb_of_pages, page_full);
-
     file_string -= ((nb_of_pages) * PAGE_LENGTH);
     free(parsed_file);
     free(file_string);
@@ -138,7 +135,6 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
     if (*fp == NULL)
         return -1;
 
-    //Compute file size, and goes back to the beginning of the file
     int file_size = get_file_size(fp);
 
     //Reads file into file_string
@@ -146,7 +142,6 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
     fread(file_string, file_size, 1, *fp);
 
     //Compute array
-
     int page_full = is_full(file_size);
     int nb_of_pages = (int) file_size / PAGE_LENGTH;
 
@@ -157,6 +152,7 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
 
     int tree_size = compute_tree_size(nb_of_pages + 1 - page_full);
 
+    //Memory allocation
     char **parsed_file = calloc(tree_size, sizeof(char **) * sizeof(char *) * PAGE_LENGTH );
     *result            = malloc(sizeof(char *) * HASH_SIZE * 2 * tree_size);
 
@@ -166,27 +162,26 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
     }
     parsed_file = parsed_file - tree_size*PAGE_LENGTH;
 
+    //File parsing
     parse_file(parsed_file, &file_string, nb_of_pages, tree_size, page_full);
 
-    int height = (int) log2(tree_size) + 1;
-
     //Assigning values for merkle_tree calculation
+    int height = (int) log2(tree_size) + 1;
     mt->tree_height = height;
     mt->nb_nodes    = 0;
     mt->nb_of_leaves = tree_size;
 
-    if (m_build_tree(mt, parsed_file, nb_threads) == -1)
+    if (m_build_tree(mt, parsed_file, nb_threads) == -1) {
         log_msg("%s\n", "ERROR : Tree could not build.");
+        return -1;
+    }
 
     //Stores result in a string
     tree_to_string(mt, *result);
-    //log_msg("%s\n", *result);
 
     //Freeing memory
     free_merkle(mt);
-
     free_file(parsed_file,nb_of_pages, page_full);
-
     file_string -= ((nb_of_pages) * PAGE_LENGTH);
     free(parsed_file);
     free(file_string);
@@ -257,7 +252,6 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
 
     *result = malloc(HASH_SIZE * mt->nb_nodes);
     tree_to_string(mt, *result);
-    log_msg("%s\n", "coucou");
 
     //Freeing memory
     free(*new_datas);
@@ -297,4 +291,18 @@ int quick_change(int size, int offset, char **buf, merkle_tree *mt, char ** resu
     else {
         return -2;
     }
+}
+
+int root_calculation(merkle_tree *mt, char **result) {
+
+    int leaf_start_index = (1 << (mt->tree_height - 1));
+    for (int i = leaf_start_index-1; i > 0 ; i--){
+        mt->nodes[i].hash = NULL;
+        if (hash_node(mt, i) == -1)
+            return -1;
+    }
+    *result = malloc(sizeof(char *) * HASH_SIZE * 2 * leaf_start_index);
+    tree_to_string(mt, *result);
+    free_merkle(mt);
+    return 0;
 }
