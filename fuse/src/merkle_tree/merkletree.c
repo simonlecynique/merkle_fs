@@ -238,7 +238,7 @@ void print_tree(merkle_tree *mt) {
 //Format : "1:hash,2:hash"
 void tree_to_string(merkle_tree *mt, char tree[]) {
 
-    char *tree_string = malloc(HEX * (HASH_SIZE / BYTE_SIZE) * mt->nb_nodes);
+    char *tree_string = malloc(HEX * HASH_SIZE * mt->nb_nodes);
     char *hash;
     char number_string[10];
     tree_string[0] = '\0';
@@ -248,6 +248,7 @@ void tree_to_string(merkle_tree *mt, char tree[]) {
         strcat(tree_string, number_string);
         strcat(tree_string, ":");
         hash = mt->nodes[i].hash;
+        log_msg("%s\n", hash);
         strcat(tree_string, hash);
         if (i < mt->nb_nodes-1)
             strcat(tree_string, ",");
@@ -411,7 +412,7 @@ void free_merkle(merkle_tree *mt) {
 
     for (int i = 1 ; i < mt->nb_nodes ; i ++) {
 
-        if (i > mt->nb_nodes / 2)
+        if (i > mt->nb_nodes / 2 && mt->nodes[i].data)
             free(mt->nodes[i].data);
         if (mt->nodes[i].hash)
             free(mt->nodes[i].hash);

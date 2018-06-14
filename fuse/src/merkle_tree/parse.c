@@ -270,8 +270,24 @@ int quick_change(int size, int offset, char **buf, merkle_tree *mt, char ** resu
       int page_to_change = (int) offset / PAGE_LENGTH;
       int leaf_start_index = (1 << (mt->tree_height - 1));
 
-      if (page_to_change + 1 > (mt->nb_nodes / 2))
-          return -2;
+      if (page_to_change + 1 > (mt->nb_nodes / 2)) {
+          merkle_tree new_mt;
+          get_bigger_tree(mt, &new_mt);
+          int indexes[1];
+          int new_leaf_start_index = (1 << (new_mt.tree_height - 1));
+          indexes[0] = new_leaf_start_index + page_to_change;
+
+          if (change_and_rebuild(&new_mt, indexes, buf, 1, BUFFER_MODE) == -1)
+              return -1;
+
+          *result = malloc(sizeof(char *) * HASH_SIZE * 2 * new_mt.nb_nodes);
+          tree_to_string(&new_mt, *result);
+          log_msg("%s\n", "Managed to get here");
+          free_merkle(mt);
+          free_merkle(&new_mt);
+          return 0;
+
+      }
 
       int indexes[1];
       indexes[0] = leaf_start_index + page_to_change;
@@ -279,7 +295,7 @@ int quick_change(int size, int offset, char **buf, merkle_tree *mt, char ** resu
       if (change_and_rebuild(mt, indexes, buf, 1, BUFFER_MODE) == -1)
           return -1;
 
-      *result = malloc(HASH_SIZE * mt->nb_nodes);
+      *result = malloc(sizeof(char *) * HASH_SIZE * 2 * mt->nb_nodes);
       tree_to_string(mt, *result);
 
       free_merkle(mt);
@@ -304,5 +320,39 @@ int root_calculation(merkle_tree *mt, char **result) {
     *result = malloc(sizeof(char *) * HASH_SIZE * 2 * leaf_start_index);
     tree_to_string(mt, *result);
     free_merkle(mt);
+    return 0;
+}
+
+int get_bigger_tree(merkle_tree *old_mt, merkle_tree *new_mt) {
+
+    new_mt->tree_height = 1 + old_mt->tree_height;
+    new_mt->nb_nodes = (1 << (new_mt->tree_height));
+
+    int old_start_index = (1 << (old_mt->tree_height - 1));
+    int new_start_index = (1 << (new_mt->tree_height - 1));
+
+    new_mt->nodes    = malloc(sizeof(node) * (new_mt->nb_nodes + 1) * 2 * PAGE_LENGTH * HASH_SIZE);
+
+    for (int i = 0; i < old_mt->nb_nodes - old_start_index ; i++){
+      new_mt->nodes[new_start_index + i].hash = malloc(sizeof(char *)* strlen(old_mt->nodes[old_start_index + i].hash));
+      strcpy(new_mt->nodes[new_start_index + i].hash, old_mt->nodes[old_start_index + i].hash);
+    }
+
+    for (int i = new_start_index ; i < new_mt->nb_nodes ; i++){
+        new_mt->nodes[i].data = malloc(sizeof(char *)* strlen(" "));
+        new_mt->nodes[i].hash = NULL;
+        if (hash_node(new_mt, i) == -1)
+          return -1;
+    }
+
+    for (int i = new_start_index - 1; i > 0; i--) {
+        //mt->nodes[i].hash = NULL;
+        new_mt->nodes[i].hash = malloc(sizeof(char *)* strlen("deprecated"));
+        strcpy(new_mt->nodes[i].hash, "deprecated");
+        // if (hash_node(mt, i) == -1)
+        //     return -1;
+
+    }
+
     return 0;
 }
