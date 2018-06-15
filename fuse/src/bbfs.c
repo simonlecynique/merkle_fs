@@ -318,7 +318,7 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
 
     if (getxattr(fpath, "merkle", tree_string, attr_size, 0 , 0) > 0) {
         log_msg("%s\n", "Getting previous Merkle Tree");
-        log_msg("%d\n", strlen(tree_string));
+        //log_msg("%d\n", strlen(tree_string));
         pthread_mutex_lock(&lock);
         string_to_tree(&mt, tree_string);
         pthread_mutex_unlock(&lock);

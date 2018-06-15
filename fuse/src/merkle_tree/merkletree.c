@@ -248,7 +248,6 @@ void tree_to_string(merkle_tree *mt, char tree[]) {
         strcat(tree_string, number_string);
         strcat(tree_string, ":");
         hash = mt->nodes[i].hash;
-        log_msg("%s\n", hash);
         strcat(tree_string, hash);
         if (i < mt->nb_nodes-1)
             strcat(tree_string, ",");

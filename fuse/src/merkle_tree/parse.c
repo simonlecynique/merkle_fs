@@ -340,6 +340,7 @@ int get_bigger_tree(merkle_tree *old_mt, merkle_tree *new_mt) {
 
     for (int i = new_start_index ; i < new_mt->nb_nodes ; i++){
         new_mt->nodes[i].data = malloc(sizeof(char *)* strlen(" "));
+        strcpy(new_mt->nodes[i].data, " ");
         new_mt->nodes[i].hash = NULL;
         if (hash_node(new_mt, i) == -1)
           return -1;
