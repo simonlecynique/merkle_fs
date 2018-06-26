@@ -131,10 +131,12 @@ int main(int argc, char const *argv[]) {
       size_of_files        = strtol(argv[3], (char **)NULL, 10);
       path = argv[4];
     }
+    printf("%s %d %s\n", "Creating ", nb_threads, " threads..." );
+    printf("%s %d %s\n", "Each file is ", size_of_files*4096 / 1000000 , "MB." );
 
-    if (!test_fs(nb_threads, nb_files_per_threads, size_of_files, "fuse/example/mountdir/"))
+    if (!test_fs(nb_threads, nb_files_per_threads, size_of_files, "fuse/example/"))
         printf("%s %d %s\n", "All", nb_threads * nb_files_per_threads, "files created." );
-    //delete_files(nb_threads, nb_files_per_threads, "fuse/example/mountdir/");
+    delete_files(nb_threads, nb_files_per_threads, "fuse/example/mountdir/");
 
 
     time_t end = time(NULL);
