@@ -37,36 +37,39 @@ typedef struct {
 
 //SINGLE THREADED---------------------------------------------------------------
 
-//Builds Merkle tree based on a data table to fill the leaves.
+//Computes the Merkle tree of the datas.
 int build_tree(merkle_tree *mt, char **datas);
 
-//Computes hash of node i.
+//Hashes the data of a node.
 int hash_node(merkle_tree *mt, int i);
 
 //MULTI THREADED----------------------------------------------------------------
 
+//Fills the data of leaves with a parsed file.
 int set_tree_datas(merkle_tree *mt, char **datas);
 
+//Computes the Merkle tree of the datas. Multithreaded API.
 int m_build_tree(merkle_tree *mt, char **datas, int nb_of_threads);
 
+//Hashes the data of several nodes. Multithreaded API.
 void *m_hash_nodes(void *arg);
 
 //------------------------------------------------------------------------------
 
+//Prints whole tree.
 void print_tree(merkle_tree *mt);
 
-//Changes tree data of indexes in the argument array. The data to be inserted
-//are in the datas argument. The number of data to change is number.
+//Changes pages of tree and recomputes hashes.
 int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number, int mode);
 
-//Compares two trees : when different node is found,
-//searches until finding all different leaves.
+//Prints differences between two Merkle trees.
 void compare_trees(merkle_tree *mt_a, merkle_tree *mt_b, int index);
 
-//Transforms tree to a string.
+//Formats Merkle tree to string.
 void tree_to_string(merkle_tree *mt, char tree[]);
 
-//Transforms string to tree.
+//Fills tree with hashes in string.
 void string_to_tree(merkle_tree *mt, char *tree_string);
 
+//Frees Merkle tree.
 void free_merkle(merkle_tree *mt);

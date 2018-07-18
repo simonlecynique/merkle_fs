@@ -2,6 +2,13 @@
 
 //SINGLE THREADED---------------------------------------------------------------
 
+/*
+ * Computes the Merkle tree of the datas.
+ * mt : pointer to the Merkle tree to be computed.
+ * datas : pointers to pages to be copied in the tree.
+ * returns : 0 if successful, 1 if not.
+ */
+
 int build_tree(merkle_tree *mt, char **datas) {
 
     int data_size = 0;
@@ -42,6 +49,13 @@ int build_tree(merkle_tree *mt, char **datas) {
 
     return 0;
 }
+
+/*
+ * Hashes the data of a node.
+ * mt : pointer to the Merkle tree to be modified.
+ * i : index of the node to be hashed.
+ * returns : 0 if successful, 1 if not.
+ */
 
 int hash_node(merkle_tree *mt, int i) {
     //If the index is out of the range, return.
@@ -118,6 +132,13 @@ int hash_node(merkle_tree *mt, int i) {
 
 //MULTI THREADED----------------------------------------------------------------
 
+/*
+ * Fills the data of leaves with a parsed file.
+ * mt : pointer to the Merkle tree to be modified.
+ * datas : parsed file to copy into the tree's data.
+ * returns : 0 if successful, 1 if not.
+ */
+
 int set_tree_datas(merkle_tree *mt, char **datas) {
 
     int total_size = 0;
@@ -143,6 +164,14 @@ int set_tree_datas(merkle_tree *mt, char **datas) {
     return 0;
 
 }
+
+/*
+ * Computes the Merkle tree of the datas. Multithreaded API.
+ * mt : pointer to the Merkle tree to be computed.
+ * datas : pointers to pages to be copied in the tree.
+ * nb_of_threads : number of threads to be invoked.
+ * returns : 0 if successful, 1 if not.
+ */
 
 int m_build_tree(merkle_tree *mt, char **datas, int nb_of_threads) {
 
@@ -194,6 +223,11 @@ int m_build_tree(merkle_tree *mt, char **datas, int nb_of_threads) {
     return 0;
 }
 
+/*
+ * Hashes the data of several nodes. Multithreaded API.
+ * returns : NULL.
+ */
+
 void *m_hash_nodes(void *arg) {
 
     //Getting arguments through struct
@@ -220,13 +254,24 @@ void *m_hash_nodes(void *arg) {
 
 // STRING FORMATTING------------------------------------------------------------
 
-//Prints hash of index i node.
+/*
+ * Prints hash of node.
+ * mt : pointer to Merkle tree.
+ * i : index of node to print.
+ * returns : NULL.
+ */
+
 void print_hash(merkle_tree *mt, int i) {
     char *hash = mt->nodes[i].hash;
     printf("%s", hash );
 }
 
-//Prints whole tree : index, then hash.
+/*
+ * Prints whole tree.
+ * mt : pointer to Merkle tree.
+ * returns : NULL.
+ */
+
 void print_tree(merkle_tree *mt) {
     for (int i = 1; i < mt->nb_nodes ; i++ ) {
         printf("%d\n", i);
@@ -235,7 +280,13 @@ void print_tree(merkle_tree *mt) {
     }
 }
 
-//Format : "1:hash,2:hash"
+/*
+ * Formats Merkle tree to string.
+ * mt : pointer to Merkle tree.
+ * tree : string to which the tree will be copied.
+ * returns : NULL.
+ */
+
 void tree_to_string(merkle_tree *mt, char tree[]) {
 
     char *tree_string = malloc(HEX * HASH_SIZE * mt->nb_nodes);
@@ -256,6 +307,13 @@ void tree_to_string(merkle_tree *mt, char tree[]) {
     free(tree_string);
 
 }
+
+/*
+ * Splits string with delimitation char.
+ * a_str : string to be split.
+ * a_delim : delimitation string.
+ * returns : pointer to splitted strings.
+ */
 
 char** str_split(char* a_str, const char a_delim) {
 
@@ -299,6 +357,13 @@ char** str_split(char* a_str, const char a_delim) {
     return result;
 }
 
+/*
+ * Fills tree with hashes in string.
+ * mt : pointer to Merkle tree to be filled.
+ * tree_string : string representing a tree.
+ * returns : NULL.
+ */
+
 void string_to_tree(merkle_tree *mt, char *tree_string) {
 
     char **tokens;
@@ -328,6 +393,16 @@ void string_to_tree(merkle_tree *mt, char *tree_string) {
 //------------------------------------------------------------------------------
 
 // COMPARISONS AND DATA CHANGES-------------------------------------------------
+
+/*
+ * Changes pages of tree and recomputes hashes.
+ * mt : pointer to Merkle tree to be filled.
+ * indexes : indexes of pages that need to be changed.
+ * datas : pointer to strings of new pages.
+ * number : number of pages that need to be changed.
+ * mode : file or buffer mode.
+ * returns : 0 if successful, 1 if not.
+ */
 
 int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number, int mode) {
 
@@ -389,9 +464,17 @@ int change_and_rebuild(merkle_tree *mt, int indexes[], char **datas, int number,
     return 0;
 }
 
-//To compare whole tree, call compare_trees(a,b, 1);
+/*
+ * Prints differences between two Merkle trees.
+ * mt_a : pointer to Merkle tree A.
+ * mt_b : pointer to Merkle tree B.
+ * index : index to compare (recursively).
+ * returns : NULL.
+ */
+
 void compare_trees(merkle_tree *mt_a, merkle_tree *mt_b, int index) {
 
+    //To compare whole tree, call compare_trees(a,b, 1)
     if (strcmp(mt_a->nodes[index].hash, mt_b->nodes[index].hash)) {
         printf("%s", "Difference on node number ");
         printf("%d\n", index);
@@ -406,6 +489,12 @@ void compare_trees(merkle_tree *mt_a, merkle_tree *mt_b, int index) {
 }
 
 //------------------------------------------------------------------------------
+
+/*
+ * Frees Merkle tree.
+ * mt : pointer to Merkle tree.
+ * returns : NULL.
+ */
 
 void free_merkle(merkle_tree *mt) {
 
