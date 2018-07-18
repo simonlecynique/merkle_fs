@@ -2,32 +2,19 @@
 
 A filesystem that guarantees file integrity with Merkle Trees.
 
-## SHA3 API Overview
+## Principle
 
-The SHA3 functions were implemented by Andrey Jivsov (crypto@brainhub.org), found here on public domain on github : https://github.com/brainhub/SHA3IUF
-Here is a concrete example of the API, the hash of the string "abc".
+Each file has its own corresponding Merkle tree. The file is composed of pages (of PAGE_LENGTH characters).
+Every modification of a file changes its Merkle tree. We therefore write a filesystem with FUSE that modifies the write function.
 
-    sha3_context c;
-    uint8_t *hash;
+The Merkle tree is stored in the file's metadata, in an extended attribute.
 
-Single-buffer hashing:
-
-    sha3_Init256(&c);
-    sha3_Update(&c, "abc", 3);
-    hash = sha3_Finalize(&c);
-    // 'hash' points to a buffer inside 'c'
-    // with the value of SHA3-256
-
-Alternatively, IUF hashing:
-
-    sha3_Init256(&c);
-    sha3_Update(&c, "a", 1);
-    sha3_Update(&c, "bc", 2);
-    hash = sha3_Finalize(&c);
+At each write call, the system gets the previous Merkle Tree of the file that is stored its metadata, performs the write, and then computes the hashes of pages that were modified. The close call triggers computation of non-leaf nodes.
 
 ## Merkle Tree implementation
 
-### Classes
+This part describes what can be found in the merkletree.c file.
+
 
 A Merkle tree is composed of :
 
@@ -39,56 +26,40 @@ A Merkle tree is composed of :
 A node is composed of :
 
     -> (char *) data : The string the node represents, and has to hash.
-    -> (char *) hash : The hashed string of data.
+    -> (char *) hash : The hashed string (SHA256) of data if the node is a leaf, or a hash of the concatenation of the two children if not.
 
-### Functions
 
 There are two implemented APIs :
 
 * Single-Threaded
 
-**hash_node** :
-
-The function is used to hash the data of the node n° i. Acts differently whether the node is a leaf (just hashes the data), or not (hashes the concatenation of children leaves).
-
-**build_tree** :
-
-This function computes the whole tree hashes based on the strings pointer
-when given a merkle_tree with the good number of nodes and the tree height.
+The main thread hashes node after node (leaves first, before going up the tree).
 
 * Multi-Threaded
 
-**m_build_tree** :
+The number of threads has to be a power of two.
+Each thread is assigned a part of the tree, and computes the hashes of this part.
 
-Same as build_tree, but multithreaded. You give the number of threads you want to use as an additional argument. It has to be a power of two for now.
-
-**m_hash_nodes** :
-
-This multithreaded function computes the hashes of a portion of the tree.
-
-**set_tree_datas** :
-
-Just sets the data, used right before computing all the hashes.
-
-* Data changes and comparisons
-
-**change_and_rebuild** :
-
-Changes the data pointed by the arguments and recomputes the nodes that are modified.
-
-**compare_trees** :
-This function compares two Merkle Trees on node n° i.
-If the node is different, then compares the two children.
-
-* Strings
-
-**tree_to_string and string_to_tree** :
-Turn the tree into string and vice-versa.
-
-* Free Structure
-
-**free_merkle_tree** :
-
-Frees the structure.
+For further details, please report to the merkletree.c file in the /fuse/src/merkle_tree directory.
 
 ## Parsing  
+
+This part describes what can be found in the parse.c file.
+
+The main purpose of the functions in this file is to parse a file into PAGE_LENGTH characters pages.
+
+For further details, please report to the parse.c file in the /fuse/src/merkle_tree directory.
+
+## The Filesystem
+
+The filesystem definition can be found in the /fuse/src directory, in the bbfs.c file.
+
+## How to run it
+
+First, go to /fuse/src directory. To compile the filesystem, you need to run the ./compile command.
+Now that the filesystem has compiled, you can mount any directory you want by running :
+./bbfs rootdirectory mountdirectory
+
+A Makefile in the fuse/example directory creates a default directory and mounts it into another.
+
+To see a file's extended attribute, run the command xattr -l filename
