@@ -1,5 +1,12 @@
 #include "parse.h"
 
+/*
+ * Computes closest power of two of the input.
+ * index : Integer we need to compute the closest power of two of.
+ * Usually file_size.
+ * returns : Closest power of two.
+ */
+
 int compute_tree_size(int index) {
     unsigned int v = index;
 
@@ -13,6 +20,12 @@ int compute_tree_size(int index) {
     return v;
 }
 
+/*
+ * Computes if the pages of the tree are full.
+ * file_size : size of the file we parse in the tree.
+ * returns : 1 if the pages are full, 0 if not.
+ */
+
 int is_full(int file_size) {
 
     if (file_size % PAGE_LENGTH == 0)
@@ -21,6 +34,12 @@ int is_full(int file_size) {
     return 0;
 }
 
+/*
+ * Computes the size of a file given its pointer.
+ * fp : pointer to the pointer of the file.
+ * returns : size of the file.
+ */
+
 int get_file_size(FILE **fp) {
   fseek(*fp, 0L, SEEK_END);
   int size = ftell(*fp);
@@ -28,6 +47,14 @@ int get_file_size(FILE **fp) {
 
   return size;
 }
+
+/*
+ * Frees the memory allocated to a parsed file.
+ * parsed_file : pointers to pages of the file.
+ * nb_of_pages : number of pages of the file.
+ * is_full : 1 if the pages are full, 0 if not.
+ * returns : NULL
+ */
 
 void free_file(char **parsed_file, int nb_of_pages, int is_full) {
 
@@ -45,6 +72,12 @@ void free_file(char **parsed_file, int nb_of_pages, int is_full) {
   return;
 
 }
+
+/*
+ * Parses a string into pages of PAGE_LENGTH.
+ * parsed_file :pointers to pages of the file.
+ * returns : NULL.
+ */
 
 void parse_file(char **parsed_file, char **file_string, int nb_of_pages, int tree_size, int page_full) {
     for (int i = 0 ; i < nb_of_pages ; i ++) {
@@ -74,6 +107,14 @@ void parse_file(char **parsed_file, char **file_string, int nb_of_pages, int tre
 
     return;
 }
+
+/*
+ * Computes the Merkle tree given the parsed file.
+ * parsed_file : pointers to pages of the file.
+ *
+ * result : string in which the resulting tree will be stored.
+ * returns : 0 if successful, 1 if not.
+ */
 
 int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     //File does not exist
@@ -129,6 +170,15 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
 
     return 0;
 }
+
+/*
+ * Computes the Merkle tree given the parsed file. Multithreaded API.
+ * fp : pointer to the pointer of the file.
+ * merkle_tree : pointer to the tree that needs to be computed.
+ * result : string in which the resulting tree will be stored.
+ * returns : 0 if successful, 1 if not.
+ * nb_threads : number of threads to invoke.
+ */
 
 int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) {
     //File does not exist
@@ -188,6 +238,14 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
 
     return 0;
 }
+
+/*
+ * Updates the Merkle tree after a change has been made to the file.
+ * size : how much bytes have been modified.
+ * offset : offset where those bytes have been written.
+ * result : string in which the resulting tree will be stored.
+ * returns : 0 if successful, 1 if not.
+ */
 
 int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **result) {
 
@@ -263,6 +321,15 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
 
 }
 
+/*
+ * If a write changes a full page, updates the Merkle tree given a buffer
+ * without opening the file.
+ * size : how much bytes have been modified.
+ * offset : offset where those bytes have been written.
+ * result : string in which the resulting tree will be stored.
+ * returns : 0 if successful, 1 if not.
+ */
+
 int quick_change(int size, int offset, char **buf, merkle_tree *mt, char ** result) {
 
     if (is_full(offset)) {
@@ -309,6 +376,13 @@ int quick_change(int size, int offset, char **buf, merkle_tree *mt, char ** resu
     }
 }
 
+/*
+ * Computes the hashes of the nodes that are not leaves.
+ * mt : pointer to the Merkle tree that needs to be modified.
+ * result : string in which the resulting tree will be stored.
+ * returns : 0 if successful, 1 if not.
+ */
+
 int root_calculation(merkle_tree *mt, char **result) {
 
     int leaf_start_index = (1 << (mt->tree_height - 1));
@@ -322,6 +396,13 @@ int root_calculation(merkle_tree *mt, char **result) {
     free_merkle(mt);
     return 0;
 }
+
+/*
+ * Copies a Merkle tree into a bigger tree.
+ * old_mt : pointer to the tree to be copied.
+ * new_mt : pointer to a bigger tree.
+ * returns : 0 if successful, 1 if not.
+ */
 
 int get_bigger_tree(merkle_tree *old_mt, merkle_tree *new_mt) {
 
@@ -347,12 +428,8 @@ int get_bigger_tree(merkle_tree *old_mt, merkle_tree *new_mt) {
     }
 
     for (int i = new_start_index - 1; i > 0; i--) {
-        //mt->nodes[i].hash = NULL;
         new_mt->nodes[i].hash = malloc(sizeof(char *)* strlen("deprecated"));
         strcpy(new_mt->nodes[i].hash, "deprecated");
-        // if (hash_node(mt, i) == -1)
-        //     return -1;
-
     }
 
     return 0;
