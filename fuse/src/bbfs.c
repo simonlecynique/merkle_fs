@@ -350,6 +350,7 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     }
 
     //Free allocated resources.
+    //log_msg("%s\n", result);
     free(result);
     free(tree_string);
 
@@ -436,6 +437,9 @@ int bb_release(const char *path, struct fuse_file_info *fi)
     char fpath[PATH_MAX];
     bb_fullpath(fpath, path);
 
+    FILE *fp;
+    char *result;
+
     merkle_tree mt;
 
     int attr_size     = getxattr(fpath, "merkle", NULL, 0, 0 , 0);
@@ -450,6 +454,14 @@ int bb_release(const char *path, struct fuse_file_info *fi)
         root_calculation(&mt, &result);
         setxattr(fpath, "merkle", result, strlen(result), 0, 0);
         free(result);
+    }
+
+    else {
+      fp = fopen(fpath, "r");
+      if (m_compute_merkle(&fp, &mt, &result, 8) != -1)
+          setxattr(fpath, "merkle", result, strlen(result), 0, 0);
+      fclose(fp);
+      free(result);
     }
 
     free(tree_string);
