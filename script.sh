@@ -1,19 +1,6 @@
-./test_fs 5 5 5000 path
-sleep 5
-./test_fs 5 5 5000 pat
-sleep 5
-./test_fs 5 5 5000 path
-sleep 5
-./test_fs 5 5 5000 path
-
-sleep 5
-./test_fs 5 5 5000 path
-sleep 5
-./test_fs 5 5 5000 path
-sleep 5
-./test_fs 5 5 5000 path
-sleep 5
-./test_fs 5 5 5000 path
-sleep 5
-./test_fs 5 5 5000 path
-sleep 5
+cd fuse/example
+make
+cd ../..
+./test_fs 10 10 100 mountdir
+cd fuse/example
+cd ../..

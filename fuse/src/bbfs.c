@@ -310,49 +310,49 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     int k = log_syscall("pwrite", pwrite(fi->fh, buf, size, offset), 0);
 
     //Variables declaration.
-    FILE *fp;
-    merkle_tree mt;
-    char *result;
-
-    int attr_size     = getxattr(fpath, "merkle", NULL, 0, 0 , 0);
-    char *tree_string = calloc(sizeof(char *) * attr_size, 1);
-
-    if (getxattr(fpath, "merkle", tree_string, attr_size, 0 , 0) > 0) {
-        log_msg("%s\n", "Getting previous Merkle Tree");
-
-        //Transforms string to a tree.
-        pthread_mutex_lock(&lock);
-        string_to_tree(&mt, tree_string);
-        pthread_mutex_unlock(&lock);
-
-        //Performs quick change if possible.
-        //If succeeds, set the extended attribute.
-        int res = quick_change(size, offset, &buf, &mt, &result);
-        if (res != -2 && res != -1) {
-            setxattr(fpath, "merkle", result, strlen(result), 0, 0);
-        }
-        //If it fails, calls page_in_need (therefore needs to open file).
-        else {
-            fp = fopen(fpath, "r");
-            if (pages_in_need(size, offset, &mt, &fp, &result) != -1) {
-                setxattr(fpath, "merkle", result, strlen(result), 0, 0);
-            }
-            fclose(fp);
-        }
-    }
+    // FILE *fp;
+    // merkle_tree mt;
+    // char *result;
+    //
+    // int attr_size     = getxattr(fpath, "merkle", NULL, 0, 0 , 0);
+    // char *tree_string = calloc(sizeof(char *) * attr_size, 1);
+    //
+    // if (getxattr(fpath, "merkle", tree_string, attr_size, 0 , 0) > 0) {
+    //     log_msg("%s\n", "Getting previous Merkle Tree");
+    //
+    //     //Transforms string to a tree.
+    //     pthread_mutex_lock(&lock);
+    //     string_to_tree(&mt, tree_string);
+    //     pthread_mutex_unlock(&lock);
+    //
+    //     //Performs quick change if possible.
+    //     //If succeeds, set the extended attribute.
+    //     int res = quick_change(size, offset, &buf, &mt, &result);
+    //     if (res != -2 && res != -1) {
+    //         setxattr(fpath, "merkle", result, strlen(result), 0, 0);
+    //     }
+    //     //If it fails, calls page_in_need (therefore needs to open file).
+    //     else {
+    //         fp = fopen(fpath, "r");
+    //         if (pages_in_need(size, offset, &mt, &fp, &result) != -1) {
+    //             setxattr(fpath, "merkle", result, strlen(result), 0, 0);
+    //         }
+    //         fclose(fp);
+    //     }
+    // }
 
     //First extended merkle attribute. Compute the tree of file.
-    else {
-        fp = fopen(fpath, "r");
-        if (m_compute_merkle(&fp, &mt, &result, 8) != -1)
-            setxattr(fpath, "merkle", result, strlen(result), 0, 0);
-        fclose(fp);
-    }
+    // else {
+    //     fp = fopen(fpath, "r");
+    //     if (m_compute_merkle(&fp, &mt, &result, 8) != -1)
+    //         setxattr(fpath, "merkle", result, strlen(result), 0, 0);
+    //     fclose(fp);
+    // }
 
     //Free allocated resources.
     //log_msg("%s\n", result);
-    free(result);
-    free(tree_string);
+    // free(result);
+    // free(tree_string);
 
     return k;
 }
@@ -432,7 +432,7 @@ int bb_release(const char *path, struct fuse_file_info *fi)
 {
     log_msg("\nbb_release(path=\"%s\", fi=0x%08x)\n",
 	  path, fi);
-    int k = log_syscall("close", close(fi->fh), 0);
+
 
     char fpath[PATH_MAX];
     bb_fullpath(fpath, path);
@@ -458,13 +458,17 @@ int bb_release(const char *path, struct fuse_file_info *fi)
 
     else {
       fp = fopen(fpath, "r");
-      if (m_compute_merkle(&fp, &mt, &result, 8) != -1)
+      if (m_compute_merkle(&fp, &mt, &result, 8) != -1) {
+          root_calculation(&mt, &result);
           setxattr(fpath, "merkle", result, strlen(result), 0, 0);
-      fclose(fp);
+      }
+
+      //fclose(fp);
       free(result);
     }
 
     free(tree_string);
+    int k = log_syscall("close", close(fi->fh), 0);
     // We need to close the file.  Had we allocated any resources
     // (buffers etc) we'd need to free them here as well.
     return k;
