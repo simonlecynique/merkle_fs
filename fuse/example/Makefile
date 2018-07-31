@@ -8,5 +8,5 @@ distdir:
 	cp Makefile $(distdir)
 
 mostlyclean clean distclean mainainer-clean:
-	umount mountdir
+	umount -f mountdir
 	rm -r mountdir rootdir bbfs.log
