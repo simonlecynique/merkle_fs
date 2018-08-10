@@ -1,6 +1,21 @@
 /*
   Merkle File System
 */
+/*
+ --------------------------------------------------------------------------------
+ Copyright (C) 2018 SRI International
+ This program is free software: you can redistribute it and/or
+ modify it under the terms of the GNU General Public License as
+ published by the Free Software Foundation, either version 3 of the
+ License, or (at your option) any later version.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ General Public License for more details.
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+ --------------------------------------------------------------------------------
+ */
 
 #include "config.h"
 #include "params.h"
@@ -309,37 +324,37 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     bb_fullpath(fpath, path);
     int k = log_syscall("pwrite", pwrite(fi->fh, buf, size, offset), 0);
 
-    //Variables declaration.
-    // FILE *fp;
-    // merkle_tree mt;
-    // char *result;
-    //
-    // int attr_size     = getxattr(fpath, "merkle", NULL, 0, 0 , 0);
-    // char *tree_string = calloc(sizeof(char *) * attr_size, 1);
-    //
-    // if (getxattr(fpath, "merkle", tree_string, attr_size, 0 , 0) > 0) {
-    //     log_msg("%s\n", "Getting previous Merkle Tree");
-    //
-    //     //Transforms string to a tree.
-    //     pthread_mutex_lock(&lock);
-    //     string_to_tree(&mt, tree_string);
-    //     pthread_mutex_unlock(&lock);
-    //
-    //     //Performs quick change if possible.
-    //     //If succeeds, set the extended attribute.
-    //     int res = quick_change(size, offset, &buf, &mt, &result);
-    //     if (res != -2 && res != -1) {
-    //         setxattr(fpath, "merkle", result, strlen(result), 0, 0);
-    //     }
-    //     //If it fails, calls page_in_need (therefore needs to open file).
-    //     else {
-    //         fp = fopen(fpath, "r");
-    //         if (pages_in_need(size, offset, &mt, &fp, &result) != -1) {
-    //             setxattr(fpath, "merkle", result, strlen(result), 0, 0);
-    //         }
-    //         fclose(fp);
-    //     }
-    // }
+    Variables declaration.
+    FILE *fp;
+    merkle_tree mt;
+    char *result;
+
+    int attr_size     = getxattr(fpath, "merkle", NULL, 0, 0 , 0);
+    char *tree_string = calloc(sizeof(char *) * attr_size, 1);
+
+    if (getxattr(fpath, "merkle", tree_string, attr_size, 0 , 0) > 0) {
+        log_msg("%s\n", "Getting previous Merkle Tree");
+
+        //Transforms string to a tree.
+        pthread_mutex_lock(&lock);
+        string_to_tree(&mt, tree_string);
+        pthread_mutex_unlock(&lock);
+
+        //Performs quick change if possible.
+        //If succeeds, set the extended attribute.
+        int res = quick_change(size, offset, &buf, &mt, &result);
+        if (res != -2 && res != -1) {
+            setxattr(fpath, "merkle", result, strlen(result), 0, 0);
+        }
+        //If it fails, calls page_in_need (therefore needs to open file).
+        else {
+            fp = fopen(fpath, "r");
+            if (pages_in_need(size, offset, &mt, &fp, &result) != -1) {
+                setxattr(fpath, "merkle", result, strlen(result), 0, 0);
+            }
+            fclose(fp);
+        }
+    }
 
     //First extended merkle attribute. Compute the tree of file.
     // else {
