@@ -40,7 +40,7 @@ int build_tree(merkle_tree *mt, char **datas) {
 
         //If there is a problem with data, send error
         if (*(datas + data_size) == NULL) {
-            log_msg("%s\n", "ERROR in build_tree: NULL somewhere in data");
+            //log_msg("%s\n", "ERROR in build_tree: NULL somewhere in data");
             return -1;
         }
 
@@ -168,7 +168,7 @@ int set_tree_datas(merkle_tree *mt, char **datas) {
 
         //If there is a problem with data, send error
         if (*(datas + total_size) == NULL) {
-            log_msg("%s\n", "ERROR in set_tree_datas: NULL somewhere in data");
+            //log_msg("%s\n", "ERROR in set_tree_datas: NULL somewhere in data");
             return -1;
         }
 
@@ -257,7 +257,8 @@ void *m_hash_nodes(void *arg) {
     for (int i = 0 ; i < nb_level ; i ++) {
         for (int j = start_index ; j < start_index + nb_leaves ; j++ ) {
               if (hash_node(mt, j) == -1)
-                  log_msg("%s %d\n", "Problem with node number", j );
+                  //log_msg("%s %d\n", "Problem with node number", j );
+                  return NULL;
         }
         start_index = start_index / 2 ;
         nb_leaves   = nb_leaves / 2 ;
@@ -303,7 +304,8 @@ void print_tree(merkle_tree *mt) {
  * returns : NULL.
  */
 
-void tree_to_string(merkle_tree *mt, char tree[]) {
+void tree_to_string(merkle_tree *mt, char* tree) {
+
 
     char *tree_string = malloc(HEX * HASH_SIZE * mt->nb_nodes);
     char *hash;

@@ -8,7 +8,7 @@
 #define HASH_SIZE 256
 #define BYTE_SIZE 8
 #define HEX 4
-#define PAGE_LENGTH 65536
+#define PAGE_LENGTH 4096
 #define BUFFER_MODE 1
 #define FILE_MODE 0
 

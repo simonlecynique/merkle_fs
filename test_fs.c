@@ -190,7 +190,7 @@ int main(int argc, char const *argv[]) {
         printf("%s\n", "Running default mode");
         nb_threads           = 10;
         nb_files_per_threads = 10;
-        size_of_files        = 1000;
+        size_of_files        = 100;
     }
 
     else if (argc != 5) {

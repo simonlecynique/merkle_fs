@@ -135,7 +135,7 @@ void parse_file(char **parsed_file, char **file_string, int nb_of_pages, int tre
 int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     //File does not exist
     if (*fp == NULL) {
-        log_msg("%s\n", "ERROR : File does not exist");
+        //log_msg("%s\n", "ERROR : File does not exist");
         return -1;
     }
 
@@ -170,7 +170,7 @@ int compute_merkle(FILE **fp, merkle_tree *mt, char **result) {
     mt->nb_of_leaves = tree_size;
 
     if (build_tree(mt, parsed_file) == -1) {
-        log_msg("%s\n", "ERROR : Tree could not build");
+        //log_msg("%s\n", "ERROR : Tree could not build");
         return -1;
     }
 
@@ -246,7 +246,7 @@ int m_compute_merkle(FILE **fp, merkle_tree *mt, char **result, int nb_threads) 
     tree_to_string(mt, *result);
 
     //Freeing memory
-    free_merkle(mt);
+    //free_merkle(mt);
     free_file(parsed_file,nb_of_pages, page_full);
     file_string -= ((nb_of_pages) * PAGE_LENGTH);
     free(parsed_file);
@@ -267,7 +267,7 @@ int pages_in_need(int size, int offset, merkle_tree *mt, FILE **fp, char **resul
 
     //File does not exist
     if (*fp == NULL) {
-        log_msg("%s\n", "ERROR : File does not exist");
+        //log_msg("%s\n", "ERROR : File does not exist");
         return -1;
     }
 
@@ -365,7 +365,7 @@ int quick_change(int size, int offset, char **buf, merkle_tree *mt, char ** resu
 
           *result = malloc(sizeof(char *) * HASH_SIZE * 2 * new_mt.nb_nodes);
           tree_to_string(&new_mt, *result);
-          log_msg("%s\n", "Managed to get here");
+          //log_msg("%s\n", "Managed to get here");
           free_merkle(mt);
           free_merkle(&new_mt);
           return 0;
@@ -400,6 +400,14 @@ int quick_change(int size, int offset, char **buf, merkle_tree *mt, char ** resu
  */
 
 int root_calculation(merkle_tree *mt, char **result) {
+
+    if (mt->tree_height == 1){
+
+        *result = malloc(sizeof(char *) * HASH_SIZE * 2 );
+        tree_to_string(mt, *result);
+        free_merkle(mt);
+        return 0;
+    }
 
     int leaf_start_index = (1 << (mt->tree_height - 1));
     for (int i = leaf_start_index-1; i > 0 ; i--){

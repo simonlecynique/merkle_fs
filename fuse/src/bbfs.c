@@ -324,7 +324,7 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
     bb_fullpath(fpath, path);
     int k = log_syscall("pwrite", pwrite(fi->fh, buf, size, offset), 0);
 
-    Variables declaration.
+    //Variables declaration.
     FILE *fp;
     merkle_tree mt;
     char *result;
@@ -336,18 +336,23 @@ int bb_write(const char *path, const char *buf, size_t size, off_t offset,
         log_msg("%s\n", "Getting previous Merkle Tree");
 
         //Transforms string to a tree.
+        log_msg("%s\n", "String to tree");
         pthread_mutex_lock(&lock);
         string_to_tree(&mt, tree_string);
         pthread_mutex_unlock(&lock);
 
         //Performs quick change if possible.
         //If succeeds, set the extended attribute.
+        log_msg("%s\n", "Quick change");
         int res = quick_change(size, offset, &buf, &mt, &result);
+        log_msg("%d\n", res);
         if (res != -2 && res != -1) {
             setxattr(fpath, "merkle", result, strlen(result), 0, 0);
         }
+
         //If it fails, calls page_in_need (therefore needs to open file).
         else {
+            log_msg("%s\n", "Fail : page in need is called");
             fp = fopen(fpath, "r");
             if (pages_in_need(size, offset, &mt, &fp, &result) != -1) {
                 setxattr(fpath, "merkle", result, strlen(result), 0, 0);
@@ -474,7 +479,6 @@ int bb_release(const char *path, struct fuse_file_info *fi)
     else {
       fp = fopen(fpath, "r");
       if (m_compute_merkle(&fp, &mt, &result, 8) != -1) {
-          root_calculation(&mt, &result);
           setxattr(fpath, "merkle", result, strlen(result), 0, 0);
       }
 
